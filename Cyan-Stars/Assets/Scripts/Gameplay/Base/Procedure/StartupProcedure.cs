@@ -21,7 +21,7 @@ namespace CyanStars.Gameplay.Base
                 //加载内置谱面清单
                 await GameRoot.GetDataModule<MusicGameModule>().LoadInternalMaps();
 
-                GameRoot.ChangeProcedure<MainHomeProcedure>();
+                GameRoot.ChangeProcedure<MapSelectionProcedure>();
                 return;
             }
 #endif
@@ -32,7 +32,7 @@ namespace CyanStars.Gameplay.Base
                 //加载内置谱面清单
                 await GameRoot.GetDataModule<MusicGameModule>().LoadInternalMaps();
 
-                GameRoot.ChangeProcedure<MainHomeProcedure>();
+                GameRoot.ChangeProcedure<MapSelectionProcedure>();
             }
         }
 

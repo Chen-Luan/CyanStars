@@ -8,13 +8,11 @@ using UnityEngine;
 namespace CyanStars.Gameplay.Base
 {
     /// <summary>
-    /// 主界面流程
+    /// 选曲流程
     /// </summary>
     [ProcedureState]
-    public class MainHomeProcedure : BaseState
+    public class MapSelectionProcedure : BaseState
     {
-
-
         public override async void OnEnter()
         {
             //打开谱面选择界面

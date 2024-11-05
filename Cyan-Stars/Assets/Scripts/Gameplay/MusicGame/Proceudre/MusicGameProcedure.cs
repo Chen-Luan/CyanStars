@@ -185,7 +185,7 @@ namespace CyanStars.Gameplay.MusicGame
             }
 
             dataModule.ResetPlayingData();
-            GameRoot.ChangeProcedure<MainHomeProcedure>();
+            GameRoot.ChangeProcedure<MapSelectionProcedure>();
         }
 
         /// <summary>
