@@ -1,16 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine;
-using CyanStars.Framework.UI;
-using CyanStars.Framework.FSM;
 using CyanStars.Framework.Asset;
 using CyanStars.Framework.Audio;
 using CyanStars.Framework.Event;
+using CyanStars.Framework.FSM;
 using CyanStars.Framework.GameObjectPool;
 using CyanStars.Framework.Logging;
 using CyanStars.Framework.Timer;
-
+using CyanStars.Framework.UI;
+using CyanStars.Gameplay.Chart;
+using CyanStars.Serialization;
+using UnityEngine;
 
 namespace CyanStars.Framework
 {
@@ -27,7 +28,8 @@ namespace CyanStars.Framework
         /// <summary>
         /// 数据模块字典
         /// </summary>
-        private static readonly Dictionary<Type, BaseDataModule> DataModuleDict = new Dictionary<Type, BaseDataModule>();
+        private static readonly Dictionary<Type, BaseDataModule>
+            DataModuleDict = new Dictionary<Type, BaseDataModule>();
 
         /// <summary>
         /// 主相机
@@ -90,6 +92,122 @@ namespace CyanStars.Framework
             Application.targetFrameRate = 60;
         }
 
+        private static void Test()
+        {
+            ChartData chartData = new ChartData()
+            {
+                ReadyBeat = 4,
+                BpmGroups = new BpmGroups()
+                {
+                    Groups = new List<BpmGroup>() { new BpmGroup() { Bpm = 128f, StartBeat = new Beat(0, 0, 1) } },
+                },
+                SpeedGroups =
+                    new List<SpeedGroupData>()
+                    {
+                        new SpeedGroupData()
+                        {
+                            Name = "Default",
+                            Type = SpeedGroupType.Relative,
+                            BezierCurve = new BezierCurve()
+                            {
+                                CubicBeziers = new List<CubicBezierCurve>()
+                                {
+                                    new CubicBezierCurve()
+                                    {
+                                        P0 = new BezierControlPoint() { Time = 0, Value = -20 },
+                                        P1 = new BezierControlPoint() { Time = 0, Value = -20 },
+                                        P2 = new BezierControlPoint() { Time = -2000, Value = -20 },
+                                        P3 = new BezierControlPoint() { Time = -2000, Value = -20 },
+                                    }
+                                }
+                            }
+                        }
+                    },
+                Notes = new List<BaseChartNoteData>()
+                {
+                    new BreakChartNoteData()
+                    {
+                        BreakNotePos = BreakNotePos.Left,
+                        Type = NoteType.Break,
+                        SpeedGroupIndex = 0,
+                        JudgeBeat = new Beat(10, 0, 1)
+                    },
+                    new BreakChartNoteData()
+                    {
+                        BreakNotePos = BreakNotePos.Right,
+                        Type = NoteType.Break,
+                        SpeedGroupIndex = 0,
+                        JudgeBeat = new Beat(12, 0, 2)
+                    },
+                    new HoldChartNoteData()
+                    {
+                        JudgeBeat = new Beat(10, 0, 1),
+                        EndJudgeBeat = new Beat(12, 0, 1),
+                        SpeedGroupIndex = 0,
+                        HoldEndSpeedGroupIndex = 0,
+                        Pos = 0.4f,
+                        Type = NoteType.Hold
+                    }
+                },
+                TrackDatas = new List<ChartTrackData>()
+                {
+                    new ChartTrackData("CyanStarsFrame",
+                        new FrameChartTrackData(FrameType.Flash,
+                            new Beat(0, 0, 1),
+                            new Beat(10, 0, 1),
+                            120f,
+                            new Color(1f, 1f, 1f, 1f),
+                            0.5f, 1f, 0f)
+                    )
+                }
+            };
+
+            JsonHelper.ToJson(chartData, "Assets/CysMultimediaAssets/Charts/NewSong/ChartData.json");
+
+            JsonHelper.FromJson<ChartData>("Assets/CysMultimediaAssets/Charts/NewSong/ChartData.json",
+                out ChartData myChartData);
+
+            ChartPackData chartPackData = new ChartPackData()
+            {
+                Title = "测试",
+                MusicVersionDatas =
+                    new List<MusicVersionData>()
+                    {
+                        new MusicVersionData()
+                        {
+                            MusicFilePath = "Assets/CysMultimediaAssets/Charts/NewSong/Music.ogg",
+                            Offset = 0,
+                            Staffs =
+                                new Dictionary<string, List<string>>()
+                                {
+                                    { "Staff1", new List<string>() { "Job1", "Job2" } },
+                                    { "Staff2", new List<string>() { "Job3", "Job4" } }
+                                }
+                        }
+                    },
+                MusicPreviewStartBeat = new Beat(0, 0, 1),
+                MusicPreviewEndBeat = new Beat(99, 0, 1),
+                CoverFilePath = "Assets/CysMultimediaAssets/Charts/NewSong/Cover.png",
+                CroppedCoverFilePath = "Assets/CysMultimediaAssets/Charts/NewSong/Cover.png",
+                Charts = new List<ChartMetadata>()
+                {
+                    new ChartMetadata()
+                    {
+                        FilePath = "Assets/CysMultimediaAssets/Charts/NewSong/ChartData.json",
+                        Difficulty = ChartDifficulty.KuiXing,
+                        Level = "20",
+                    }
+                }
+            };
+
+            JsonHelper.ToJson(chartPackData,
+                "Assets/CysMultimediaAssets/Charts/NewSong/ChartPackData.json");
+
+            JsonHelper.FromJson<ChartPackData>(
+                "Assets/CysMultimediaAssets/Charts/NewSong/ChartPackData.json",
+                out ChartPackData myChartPackData);
+        }
+
         private void Start()
         {
             MainCamera = Camera.main;
@@ -116,7 +234,7 @@ namespace CyanStars.Framework
             {
                 if (RegisterAssemblies.Contains(assembly.GetName().Name))
                 {
-                   types.AddRange(assembly.GetTypes());
+                    types.AddRange(assembly.GetTypes());
                 }
             }
 
@@ -124,6 +242,8 @@ namespace CyanStars.Framework
             {
                 //初始化数据模块
                 InitDataModules(types);
+
+                Test();
 
                 //启动游戏流程
                 GameProcedureStartUp(types);
