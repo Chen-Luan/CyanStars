@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using CyanStars.Chart;
 using CyanStars.ChartEditor.Model;
 using CyanStars.ChartEditor.ViewModel;
 using CyanStars.ChartEditor.View;

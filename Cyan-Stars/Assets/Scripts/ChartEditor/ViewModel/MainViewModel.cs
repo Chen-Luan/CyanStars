@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -154,7 +155,9 @@ namespace CyanStars.ChartEditor.ViewModel
 
         #region 变速模板
 
-        private List<SpeedGroupData> SpeedGroups => mainModel.SpeedGroupDatas;
+        private List<SpeedGroupData> ModelSpeedGroups => mainModel.SpeedGroupDatas;
+
+        public ObservableCollection<SpeedGroupData> SpeedGroups { get; }
 
         private int currentSpeedGroupIndex;
 
@@ -195,6 +198,8 @@ namespace CyanStars.ChartEditor.ViewModel
             this.mainModel = mainModel;
 
             // 初始化各部分值
+            SpeedGroups = new ObservableCollection<SpeedGroupData>(ModelSpeedGroups);
+
             selectedEditTool = DefaultEditTool;
 
             posMagnet = DefaultPosMagnet;
@@ -301,8 +306,8 @@ namespace CyanStars.ChartEditor.ViewModel
         /// </summary>
         public void AddSpeedGroup()
         {
-            SpeedGroups.Add(new SpeedGroupData());
-            CurrentSpeedGroupIndex = SpeedGroups.Count - 1;
+            ModelSpeedGroups.Add(new SpeedGroupData());
+            CurrentSpeedGroupIndex = ModelSpeedGroups.Count - 1;
             // TODO: 修改 M 层数据
         }
 
@@ -317,9 +322,9 @@ namespace CyanStars.ChartEditor.ViewModel
                 return;
             }
 
-            SpeedGroups.RemoveAt(CurrentSpeedGroupIndex);
-            CurrentSpeedGroupIndex = CurrentSpeedGroupIndex > SpeedGroups.Count - 1
-                ? SpeedGroups.Count - 1
+            ModelSpeedGroups.RemoveAt(CurrentSpeedGroupIndex);
+            CurrentSpeedGroupIndex = CurrentSpeedGroupIndex > ModelSpeedGroups.Count - 1
+                ? ModelSpeedGroups.Count - 1
                 : CurrentSpeedGroupIndex;
             // TODO: 修改 M 层数据
         }
@@ -329,8 +334,8 @@ namespace CyanStars.ChartEditor.ViewModel
         /// </summary>
         public void CopySpeedGroup()
         {
-            SpeedGroups.Add(SpeedGroups[CurrentSpeedGroupIndex]);
-            CurrentSpeedGroupIndex = SpeedGroups.Count - 1;
+            ModelSpeedGroups.Add(ModelSpeedGroups[CurrentSpeedGroupIndex]);
+            CurrentSpeedGroupIndex = ModelSpeedGroups.Count - 1;
             // TODO: 修改 M 层数据
         }
 

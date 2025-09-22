@@ -15,7 +15,6 @@ namespace CyanStars.Framework.Dialogue
 
         public override void OnUpdate(float deltaTime)
         {
-
         }
 
         public IExecutionContextBuilder CreateSimpleBuilder(string loggerCategoryName = null)
@@ -31,6 +30,8 @@ namespace CyanStars.Framework.Dialogue
                     )
                 );
             }
+
+            builder.Services.AddService<IFakeService, FakeService>();
 
             return builder;
         }
