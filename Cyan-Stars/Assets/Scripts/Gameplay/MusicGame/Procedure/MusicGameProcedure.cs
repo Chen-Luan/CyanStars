@@ -239,11 +239,11 @@ namespace CyanStars.Gameplay.MusicGame
             }
 
             // 谱包
-            chartPack = dataModule.GetChartPack(dataModule.ChartPackIndex);
-            chartData = dataModule.GetChartData(chartPack, dataModule.Difficulty);
+            chartPack = GameRoot.Chart.SelectedChartPack;
+            chartData = GameRoot.Chart.SelectedChart.ChartData;
 
             // 音乐
-            MusicVersionData musicVersionData = chartPack.ChartPackData.MusicVersionDatas[dataModule.MusicVersionIndex];
+            MusicVersionData musicVersionData = GameRoot.Chart.SelectedMusicVersion;
             AudioClip music = await GameRoot.Asset.LoadAssetAsync<AudioClip>(musicVersionData.AudioFilePath, sceneRoot);
             if (!music)
             {
@@ -272,7 +272,7 @@ namespace CyanStars.Gameplay.MusicGame
         /// </summary>
         private void InitLogger()
         {
-            ChartPack pack = dataModule.GetChartPack(dataModule.ChartPackIndex);
+            ChartPack pack = GameRoot.Chart.SelectedChartPack;
             dataModule.InitLogger($"MusicGame - {pack.ChartPackData.Title}");
         }
 

@@ -107,8 +107,7 @@ namespace CyanStars.Gameplay.MusicGame
         /// </summary>
         private async Task RefreshMusicList()
         {
-            // List<MapManifest> maps = musicGameModule.GetMaps();
-            List<ChartPack> chartPacks = musicGameModule.GetChartPacks();
+            List<ChartPack> chartPacks = GameRoot.Chart.ChartPacks;
 
             for (int i = 0; i < chartPacks.Count; i++)
             {
@@ -148,16 +147,14 @@ namespace CyanStars.Gameplay.MusicGame
             });
 
             // 将原始 Staff 文本传递给 StarsGenerator 以进一步处理
-            Dictionary<string, List<string>> staffs = mapItem.Data.ChartPack.ChartPackData
-                .MusicVersionDatas[musicGameModule.MusicVersionIndex].Staffs;
+            Dictionary<string, List<string>> staffs = GameRoot.Chart.SelectedMusicVersion.Staffs;
             if (staffs == null || staffs.Count == 0)
             {
                 Debug.LogWarning("没有设置 Staff 文本");
             }
             else
             {
-                this.owner.StarController.ResetAllStaffGroup(mapItem.Data.ChartPack.ChartPackData
-                    .MusicVersionDatas[musicGameModule.MusicVersionIndex].Staffs);
+                this.owner.StarController.ResetAllStaffGroup(GameRoot.Chart.SelectedMusicVersion.Staffs);
             }
         }
     }

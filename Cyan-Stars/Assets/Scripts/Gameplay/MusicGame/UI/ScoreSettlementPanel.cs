@@ -106,7 +106,7 @@ namespace CyanStars.Gameplay.MusicGame
             // 获取曲名、分数、杂率、最大连击数，各判定数
             MusicGameModule musicGameModule = GameRoot.GetDataModule<MusicGameModule>();
             MusicGamePlayData musicGamePlayData = musicGameModule.MusicGamePlayData;
-            Title.text = musicGameModule.GetChartPack(musicGameModule.ChartPackIndex).ChartPackData.Title;
+            Title.text = GameRoot.Chart.SelectedChartPack.ChartPackData.Title;
             targetScoreNum = musicGamePlayData.FullScore == 0
                 ? 0 // 谱面没有 Note 时，展示得分为 0，见于调试谱面等情况
                 : Mathf.RoundToInt(musicGamePlayData.Score /

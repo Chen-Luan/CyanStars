@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using JetBrains.Annotations;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace CyanStars.Chart
@@ -46,45 +47,25 @@ namespace CyanStars.Chart
         /// </summary>
         public float CropHeight;
 
-        /// <summary>
-        /// 裁剪宽度
-        /// </summary>
-        public float CropWidth => CropHeight * 4;
 
-        // 谱面元数据
+        // 谱面路径
 
         /// <summary>谱面元数据</summary>
         public List<ChartMetadata> ChartMetaDatas;
 
 
-        // 元数据
-
-        /// <summary>谱包工程文件上一次保存时间</summary>
-        public DateTime SaveTime;
-
-        // /// <summary>谱包导出时间</summary>
-        // [CanBeNull]
-        // public DateTime? ExportTime;
-
-        /// <summary>谱包哈希</summary>
-        /// <remarks>保存谱包时更新</remarks>
-        public string PackHash;
-
-
+        [JsonConstructor] // 反序列化时按下列默认值填补缺失字段
         public ChartPackData(string title, List<MusicVersionData> musicVersionDatas = null,
             Beat? musicPreviewStartBeat = null, Beat? musicPreviewEndBeat = null, string coverFilePath = null,
-            string croppedCoverFilePath = null, List<ChartMetadata> chartMetaDatas = null,
-            DateTime? saveTime = null, string packHash = null)
+            string croppedCoverFilePath = null, List<ChartMetadata> chartMetaDatas = null)
         {
             DataVersion = 1;
-            Title = title;
+            Title = title ?? "";
             MusicVersionDatas = musicVersionDatas ?? new List<MusicVersionData>();
             MusicPreviewStartBeat = musicPreviewStartBeat ?? new Beat(0, 0, 1);
             MusicPreviewEndBeat = musicPreviewEndBeat ?? new Beat(0, 0, 1);
             CoverFilePath = coverFilePath;
             ChartMetaDatas = chartMetaDatas ?? new List<ChartMetadata>();
-            SaveTime = saveTime ?? DateTime.UtcNow;
-            PackHash = packHash;
             // ExportTime = null;
         }
     }

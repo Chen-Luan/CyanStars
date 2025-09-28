@@ -91,13 +91,8 @@ namespace CyanStars.ChartEditor.View
         {
             canvas.enabled = Model.ChartDataCanvasVisibleness;
 
-            kuiXingToggle.isOn = Model.ChartData.Difficulty == ChartDifficulty.KuiXing;
-            qiMingToggle.isOn = Model.ChartData.Difficulty == ChartDifficulty.QiMing;
-            tianShuToggle.isOn = Model.ChartData.Difficulty == ChartDifficulty.TianShu;
-            wuYinToggle.isOn = Model.ChartData.Difficulty == ChartDifficulty.WuYin;
-            undefinedToggle.isOn = Model.ChartData.Difficulty == null;
+            // TODO: 从谱包 meta 文件获取难度和定数并刷新
 
-            chartLevelField.text = Model.ChartData.Level;
             readyBeatField.text = Model.ChartData.ReadyBeat.ToString();
         }
 

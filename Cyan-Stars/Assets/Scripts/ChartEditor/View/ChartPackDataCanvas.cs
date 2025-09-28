@@ -93,15 +93,8 @@ namespace CyanStars.ChartEditor.View
 
         private void ImportChart()
         {
-            FileManager fileManager = GameRoot.GetManager<FileManager>();
-            fileManager.GetFilePath(async (path) => { LoadCover(path); },
-                filters: new[] { fileManager.SpriteFilter });
-        }
-
-        private async void LoadCover(string path)
-        {
-            FileManager fileManager = GameRoot.GetManager<FileManager>();
-            Sprite sprite = await fileManager.LoadAssetFromPathAsync<Sprite>(path);
+            FileManager fileManager = GameRoot.File;
+            fileManager.GetFilePath(Model.UpdateCoverFilePath, filters: new[] { fileManager.SpriteFilter });
         }
 
         private void RefreshUI()

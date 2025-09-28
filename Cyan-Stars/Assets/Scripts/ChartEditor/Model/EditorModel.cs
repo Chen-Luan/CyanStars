@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using CyanStars.Chart;
+using CyanStars.Framework;
+using CyanStars.Framework.Chart;
 using UnityEngine;
 
 namespace CyanStars.ChartEditor.Model
@@ -15,90 +18,76 @@ namespace CyanStars.ChartEditor.Model
         /// 编辑器精简模式
         /// </summary>
         /// <remarks>精简无关元素方便新手理解制谱器，只允许设置 1 个 BPM 组、曲目版本，隐藏变速和事件相关设置</remarks>
-        public bool IsSimplification { get; private set; }
+        public bool IsSimplification { get; private set; } = true;
 
         /// <summary>
         /// 当前选中的画笔（或者是橡皮？）
         /// </summary>
-        public EditTool SelectedEditTool { get; private set; }
+        public EditTool SelectedEditTool { get; private set; } = EditTool.Select;
 
         /// <summary>
         /// 当前选中编辑的 BPM 组下标
         /// </summary>
-        public int SelectedBpmGroupIndex { get; private set; }
+        public int? SelectedBpmGroupIndex { get; private set; } = null;
 
 
         /// <summary>
         /// 当前设置的位置精度（等于屏幕上有几条竖直位置线）
         /// </summary>
-        public int PosAccuracy { get; private set; }
+        public int PosAccuracy { get; private set; } = 4;
 
         /// <summary>
         /// 是否开启了位置吸附
         /// </summary>
         /// <remarks>将会吸附到最近的位置线，或者是两条位置线的中点</remarks>
-        public bool PosMagnetState { get; private set; }
+        public bool PosMagnetState { get; private set; } = true;
 
         /// <summary>
         /// 节拍精度（等于将每小节均分为几分）
         /// </summary>
-        public int BeatAccuracy { get; private set; }
+        public int BeatAccuracy { get; private set; } = 2;
 
         /// <summary>
         /// 节拍缩放
         /// </summary>
         /// <remarks>编辑器纵向拉伸比例</remarks>
-        public float BeatZoom { get; private set; }
+        public float BeatZoom { get; private set; } = 1;
 
         /// <summary>
         /// 创建 Hold 音符时暂存的开始拍
         /// </summary>
         /// <remarks>选中 Hold 画笔后第一次点击空白区域</remarks>
-        public Beat? TempHoldJudgeBeat;
-
-
-        /// <summary>
-        /// 用于 M 层的音符数据，在 Model 构造时指向 ChartData 中的对象
-        /// </summary>
-        /// <remarks>NoteView 在从对象池取回时会存储对应的单个音符数据，可以借此定位回来</remarks>
-        public HashSet<BaseChartNoteData> ChartNotes { get; private set; }
-
-        /// <summary>
-        /// 当前选中的 Note，用 HashSet 是考虑兼容后续框选多个 Note 一起修改
-        /// </summary>
-        public HashSet<BaseChartNoteData> SelectedNotes { get; private set; }
+        public Beat? TempHoldJudgeBeat { get; private set; } = null;
 
         /// <summary>
         /// 计算 offset 后，当前选中的音乐的实际时长（ms）
         /// </summary>
         /// <remarks>超过这个时长的内容都不可以编辑，包括音符编辑、事件等等</remarks>
-        public int ActualMusicTime { get; set; } // TODO：测试完成后改为 private set;
+        public int ActualMusicTime { get; private set; } = 0;
 
         /// <summary>
         /// 谱包信息弹窗可见性
         /// </summary>
-        public bool ChartPackDataCanvasVisibleness { get; private set; }
+        public bool ChartPackDataCanvasVisibleness { get; private set; } = false;
 
         /// <summary>
         /// 谱面信息弹窗可见性
         /// </summary>
-        public bool ChartDataCanvasVisibleness { get; private set; }
+        public bool ChartDataCanvasVisibleness { get; private set; } = false;
 
         /// <summary>
         /// 音乐版本弹窗可见性
         /// </summary>
-        public bool MusicVersionCanvasVisibleness { get; private set; }
+        public bool MusicVersionCanvasVisibleness { get; private set; } = false;
 
         /// <summary>
         /// BPM 组弹窗可见性
         /// </summary>
-        public bool BpmGroupCanvasVisibleness { get; private set; }
+        public bool BpmGroupCanvasVisibleness { get; private set; } = false;
 
 
         // --- 从磁盘加载到内存中的、经过校验后的谱包和谱面数据，加载/保存时需要从读写磁盘。 ---
         public ChartPackData ChartPackData { get; private set; }
-
-        public int ChartIndex { get; private set; }
 
         public ChartData ChartData { get; private set; }
 
@@ -108,8 +97,19 @@ namespace CyanStars.ChartEditor.Model
 
         public List<SpeedGroupData> SpeedGroupDatas => ChartData.SpeedGroupDatas;
 
+        /// <summary>
+        /// 用于 M 层的音符数据，在 Model 构造时指向 ChartData 中的对象
+        /// </summary>
+        /// <remarks>NoteView 在从对象池创建时会存储对应的单个音符数据，可以借此定位回来</remarks>
+        public HashSet<BaseChartNoteData> ChartNotes { get; private set; } = new HashSet<BaseChartNoteData>();
 
-        // --- Model 事件 ---
+        /// <summary>
+        /// 当前选中的 Note，用 HashSet 是考虑兼容后续框选多个 Note 一起修改
+        /// </summary>
+        public HashSet<BaseChartNoteData> SelectedNotes { get; private set; } = new HashSet<BaseChartNoteData>();
+
+
+        #region --- Model 事件 ---
 
         /// <summary>
         /// 进入/退出精简模式
@@ -196,19 +196,28 @@ namespace CyanStars.ChartEditor.Model
         /// </summary>
         public event Action OnBpmGroupCanvasVisiblenessChanged;
 
+        #endregion
 
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="chartPackData">要加载到编辑器的谱包数据</param>
-        /// <param name="chartIndex">谱面在此谱包中的下标</param>
         /// <param name="chartData">要加载到编辑器的谱面数据</param>
-        public EditorModel(ChartPackData chartPackData, int chartIndex, ChartData chartData)
+        /// <exception cref="FileNotFoundException">谱包文件夹或谱面不存在</exception>
+        public EditorModel(ChartPack chartPack, Chart.Chart chart)
         {
+            // 设置属性值
             ChartPackData = chartPackData;
-            ChartIndex = chartIndex;
             ChartData = chartData;
 
+            // 将 Note 转为 Model 格式
+            ChartNotes = new HashSet<BaseChartNoteData>();
+            foreach (var note in ChartData.Notes)
+            {
+                ChartNotes.Add(note);
+            }
+
+            // 初始化编辑器属性默认值
             IsSimplification = true;
             SelectedEditTool = EditTool.Select;
             PosAccuracy = 4;
@@ -218,12 +227,6 @@ namespace CyanStars.ChartEditor.Model
             TempHoldJudgeBeat = null;
             SelectedNotes = new HashSet<BaseChartNoteData>();
             SelectedBpmGroupIndex = 0;
-
-            ChartNotes = new HashSet<BaseChartNoteData>();
-            foreach (var note in ChartData.Notes)
-            {
-                ChartNotes.Add(note);
-            }
 
             ChartPackDataCanvasVisibleness = false;
             ChartDataCanvasVisibleness = false;
@@ -402,6 +405,12 @@ namespace CyanStars.ChartEditor.Model
             }
         }
 
+        /// <summary>
+        /// 更新谱包预览开始拍
+        /// </summary>
+        /// <param name="integerPartString">整数</param>
+        /// <param name="numeratorString">分子</param>
+        /// <param name="denominatorString">分母</param>
         public void UpdatePreviewStareBeat(string integerPartString, string numeratorString, string denominatorString)
         {
             if (!(int.TryParse(integerPartString, out int integerPart) &&
@@ -426,6 +435,12 @@ namespace CyanStars.ChartEditor.Model
             }
         }
 
+        /// <summary>
+        /// 更新预览结束拍
+        /// </summary>
+        /// <param name="integerPartString">整数</param>
+        /// <param name="numeratorString">分子</param>
+        /// <param name="denominatorString">分母</param>
         public void UpdatePreviewEndBeat(string integerPartString, string numeratorString, string denominatorString)
         {
             if (!(int.TryParse(integerPartString, out int integerPart) &&
@@ -451,17 +466,24 @@ namespace CyanStars.ChartEditor.Model
         }
 
         /// <summary>
-        /// 尝试更新曲绘大图
+        /// 导入并更新曲绘大图
         /// </summary>
-        /// <param name="path">曲绘大图相对路径</param>
-        /// <remarks>如果路径一致，不会触发事件并返回 false</remarks>
-        /// <returns>是否发生了更新</returns>
-        public void UpdateCoverFilePath(string path)
+        /// <param name="filePath">曲绘大图绝对路径，将复制并覆盖文件至谱包资源文件夹并设置为相对路径引用</param>
+        public void UpdateCoverFilePath(string filePath)
         {
-            if (ChartPackData.CoverFilePath != path)
+            try
             {
-                ChartPackData.CoverFilePath = path;
+                string fileName = Path.GetFileName(filePath);
+                string destFilePath = Path.Combine(GameRoot.Chart.SelectedChartPack.ChartPackFolderPath,
+                    ChartManager.AssetsFolderName, fileName);
+                File.Copy(filePath, destFilePath, true);
+                GameRoot.Chart.SelectedChart.ChartMetadata.FilePath =
+                    Path.Combine(ChartManager.AssetsFolderName, fileName);
                 OnChartPackDataChanged?.Invoke();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"设置曲绘路径时异常：{e}");
             }
         }
 
@@ -603,25 +625,14 @@ namespace CyanStars.ChartEditor.Model
 
         public void UpdateDifficulty(ChartDifficulty? difficulty)
         {
-            if (difficulty == null && ChartData.Difficulty != null)
-            {
-                ChartData.Difficulty = null;
-                OnChartDataChanged?.Invoke();
-            }
-            else
-            {
-                // TODO: 校验谱包内是否存在其他相同难度谱面
-                throw new NotSupportedException();
-            }
+            // TODO: 修改谱包 meta 文件
+            throw new NotSupportedException();
         }
 
         public void UpdateLevel(string text)
         {
-            if (text != ChartData.Level)
-            {
-                ChartData.Level = text;
-                OnChartDataChanged?.Invoke();
-            }
+            // TODO: 修改谱包 meta 文件
+            throw new NotSupportedException();
         }
 
         public void UpdateReadyBeat(string text)

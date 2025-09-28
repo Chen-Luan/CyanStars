@@ -1,8 +1,12 @@
 using UnityEngine;
 using SimpleFileBrowser;
 using System;
-using System.Threading.Tasks;
-using CatAsset.Runtime;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using CyanStars.Chart;
+using JetBrains.Annotations;
+using Newtonsoft.Json;
 
 namespace CyanStars.Framework.File
 {
@@ -19,8 +23,23 @@ namespace CyanStars.Framework.File
         public readonly FileBrowser.Filter SpriteFilter = new FileBrowser.Filter("图片", ".jpg", ".png");
         public readonly FileBrowser.Filter AudioFilter = new FileBrowser.Filter("音频", ".mp3", ".wav", ".ogg");
 
-
         public override int Priority { get; }
+
+        public enum PathType
+        {
+            PersistentDataPath,
+            StreamingAssets,
+            DataPath
+        }
+
+        /// <summary>
+        /// 自定义 JsonConverter 列表
+        /// </summary>
+        private static readonly IList<JsonConverter> Converters = new List<JsonConverter>
+        {
+            new ColorConverter(), new ChartNoteDataReadConverter(), new ChartTrackDataReadConverter()
+        };
+
 
         /// <summary>
         /// 管理器初始化，在此处对 FileBrowser 进行全局配置
@@ -44,7 +63,47 @@ namespace CyanStars.Framework.File
         {
         }
 
-        #region --- Public API ---
+        #region --- Public API: 文件/文件夹的加载/保存操作弹窗 ---
+
+        public void CreateFolder(PathType pathType, string relativePath)
+        {
+            // 获取基础路径
+            string basePath = GetBasePath(pathType);
+            if (string.IsNullOrEmpty(basePath))
+            {
+                Debug.LogError("Unsupported PathType.");
+                return;
+            }
+
+            // 组合成完整路径
+            string fullPath = Path.Combine(basePath, relativePath);
+
+            // 检查路径是否为空
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                Debug.LogError("Folder path cannot be empty.");
+                return;
+            }
+
+            try
+            {
+                // 如果文件夹不存在，则创建它
+                if (!Directory.Exists(fullPath))
+                {
+                    Directory.CreateDirectory(fullPath);
+                    Debug.Log($"Successfully created folder at: {fullPath}");
+                }
+                else
+                {
+                    Debug.LogWarning($"Folder already exists at: {fullPath}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to create folder: {e.Message}");
+            }
+        }
+
 
         /// <summary>
         /// 获取单个文件的路径
@@ -135,6 +194,32 @@ namespace CyanStars.Framework.File
         }
 
         /// <summary>
+        /// 获取要保存的文件路径
+        /// </summary>
+        /// <param name="onSuccess">成功获取的回调</param>
+        /// <param name="onCancel">玩家取消的回调</param>
+        /// <param name="title">窗口标题</param>
+        public void GetSaveFilePath(Action<string> onSuccess,
+            Action onCancel = null,
+            string title = "保存文件")
+        {
+            if (IsBrowserOpen()) return;
+
+            FileBrowser.OnSuccess successWrapper = (paths) =>
+            {
+                if (paths.Length > 0)
+                {
+                    onSuccess?.Invoke(paths[0]);
+                }
+            };
+
+            FileBrowser.OnCancel cancelWrapper = onCancel != null ? new FileBrowser.OnCancel(onCancel) : null;
+
+            FileBrowser.ShowSaveDialog(successWrapper, cancelWrapper,
+                FileBrowser.PickMode.Files, false, null, null, title, "选择");
+        }
+
+        /// <summary>
         /// 获取要保存到的文件夹路径
         /// </summary>
         /// <param name="onSuccess">成功获取的回调</param>
@@ -156,44 +241,133 @@ namespace CyanStars.Framework.File
 
             FileBrowser.OnCancel cancelWrapper = onCancel != null ? new FileBrowser.OnCancel(onCancel) : null;
 
-            FileBrowser.ShowLoadDialog(successWrapper, cancelWrapper,
+            FileBrowser.ShowSaveDialog(successWrapper, cancelWrapper,
                 FileBrowser.PickMode.Folders, false, null, null, title, "选择");
         }
 
+        #endregion
+
+        #region --- Public API: Json 序列化和反序列化操作（用于读写 persistentDataPath） ---
+
         /// <summary>
-        /// 从指定的绝对路径加载资源（如图片、文本、音频等）
+        /// 序列化对象为 Json 文件
         /// </summary>
-        /// <typeparam name="T">要加载的资源类型，如 Texture2D, TextAsset, AudioClip 等</typeparam>
-        /// <param name="absolutePath">文件的完整绝对路径</param>
-        /// <param name="target">资源加载后要绑定的游戏对象，用于自动管理生命周期</param>
-        /// <param name="priority">加载任务的优先级</param>
-        /// <returns>加载完成的资源，如果失败则为 null</returns>
-        public async Task<T> LoadAssetFromPathAsync<T>(string absolutePath, GameObject target = null,
-            TaskPriority priority = TaskPriority.Middle) where T : class
+        /// <param name="obj">要序列化的对象</param>
+        /// <param name="filePath">保存到的路径和文件全名</param>
+        /// <returns>是否成功序列化</returns>
+        public static bool SaveJson(object obj, string filePath)
         {
-            if (string.IsNullOrEmpty(absolutePath))
-            {
-                Debug.LogError("LoadAssetFromPathAsync Error: Provided path is null or empty.");
-                return null;
-            }
-
-            if (!System.IO.File.Exists(absolutePath))
-            {
-                Debug.LogError($"LoadAssetFromPathAsync Error: File does not exist at path: {absolutePath}");
-                return null;
-            }
-
             try
             {
-                // 直接将绝对路径传递给 CatAsset。CatAsset 会将其作为外部原生资源处理。
-                // CatAsset 内部会负责读取文件的 byte[] 并根据类型 T 进行转换。
-                T asset = await CatAssetManager.LoadAssetAsync<T>(absolutePath, target, priority);
-                return asset;
+                // 设置序列化格式参数
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.None,
+                    Formatting = Formatting.Indented,
+                    Culture = CultureInfo.InvariantCulture,
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    Converters = Converters
+                };
+
+                // 如果目录不存在，创建目录
+                string directory = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                string json = JsonConvert.SerializeObject(obj, settings);
+                System.IO.File.WriteAllText(filePath, json);
+                Debug.Log($"序列化完成，文件路径：{filePath}");
+                return true;
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to load asset from path '{absolutePath}' using CatAsset. Exception: {e}");
-                return null;
+                Debug.LogError($"序列化时出现异常：{e}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 从 Json 文件反序列化为对象
+        /// </summary>
+        /// <remarks>此方法使用了 IO，仅兼容 Windows 端，待弃用</remarks>
+        /// <param name="filePath">要读取的文件路径</param>
+        /// <param name="obj">输出的反序列化对象，若成功返回反序列化的对象，若失败则为默认值</param>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <returns>是否成功反序列化</returns>
+        public static bool LoadJson<T>(string filePath, [CanBeNull] out T obj)
+        {
+            obj = default;
+            try
+            {
+                // 设置反序列化格式参数
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.None,
+                    Formatting = Formatting.Indented,
+                    Culture = CultureInfo.InvariantCulture,
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    Converters = Converters
+                };
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    Debug.LogError($"未找到需要反序列化的文件：{filePath}");
+                    return false;
+                }
+
+                string json = System.IO.File.ReadAllText(filePath);
+                obj = JsonConvert.DeserializeObject<T>(json, settings);
+                Debug.Log($"反序列化完成，从文件：{filePath}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"反序列化时出现异常：{e}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 从 byte[] 反序列化为对象
+        /// </summary>
+        /// <param name="bytes">包含 Json 数据的字节数组 (应为 UTF-8 编码)</param>
+        /// <param name="obj">输出的反序列化对象，若成功返回反序列化的对象，若失败则为默认值</param>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <returns>是否成功反序列化</returns>
+        public static bool LoadJsonFromBytes<T>(byte[] bytes, [CanBeNull] out T obj)
+        {
+            obj = default;
+            try
+            {
+                if (bytes == null || bytes.Length == 0)
+                {
+                    Debug.LogError("用于反序列化的 byte[] 为空或 null。");
+                    return false;
+                }
+
+                // 设置反序列化格式参数 (与其它方法保持一致)
+                JsonSerializerSettings settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.None,
+                    Formatting = Formatting.Indented,
+                    Culture = CultureInfo.InvariantCulture,
+                    DateFormatHandling = DateFormatHandling.IsoDateFormat,
+                    Converters = Converters
+                };
+
+                // 将 byte[] 转换为 UTF-8 字符串
+                string json = System.Text.Encoding.UTF8.GetString(bytes);
+
+                obj = JsonConvert.DeserializeObject<T>(json, settings);
+                Debug.Log($"从 byte[] 反序列化完成。");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"从 byte[] 反序列化时出现异常：{e}");
+                return false;
             }
         }
 
@@ -212,6 +386,24 @@ namespace CyanStars.Framework.File
             }
 
             return false;
+        }
+
+        public string GetBasePath(PathType pathType)
+        {
+            switch (pathType)
+            {
+                case PathType.PersistentDataPath:
+                    return Application.persistentDataPath;
+
+                case PathType.StreamingAssets:
+                    return Application.streamingAssetsPath;
+
+                case PathType.DataPath:
+                    return Application.dataPath;
+
+                default:
+                    return null;
+            }
         }
     }
 }

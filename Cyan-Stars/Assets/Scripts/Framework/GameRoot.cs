@@ -6,7 +6,10 @@ using CyanStars.Framework.UI;
 using CyanStars.Framework.FSM;
 using CyanStars.Framework.Asset;
 using CyanStars.Framework.Audio;
+using CyanStars.Framework.Chart;
+using CyanStars.Framework.Dialogue;
 using CyanStars.Framework.Event;
+using CyanStars.Framework.File;
 using CyanStars.Framework.GameObjectPool;
 using CyanStars.Framework.Logging;
 using CyanStars.Framework.Timer;
@@ -27,7 +30,8 @@ namespace CyanStars.Framework
         /// <summary>
         /// 数据模块字典
         /// </summary>
-        private static readonly Dictionary<Type, BaseDataModule> DataModuleDict = new Dictionary<Type, BaseDataModule>();
+        private static readonly Dictionary<Type, BaseDataModule>
+            DataModuleDict = new Dictionary<Type, BaseDataModule>();
 
         /// <summary>
         /// 主相机
@@ -70,9 +74,24 @@ namespace CyanStars.Framework
         public static UIManager UI { get; private set; }
 
         /// <summary>
-        /// Logger管理器
+        /// 日志管理器
         /// </summary>
         public static LoggerManager Logger { get; private set; }
+
+        // /// <summary>
+        // /// 视觉小说管理器
+        // /// </summary>
+        // public static DialogueManager Dialogue { get; private set; }
+
+        /// <summary>
+        /// 文件管理器
+        /// </summary>
+        public static FileManager File { get; private set; }
+
+        /// <summary>
+        /// 谱包管理器
+        /// </summary>
+        public static ChartManager Chart { get; private set; }
 
         /// <summary>
         /// 流程状态机
@@ -101,6 +120,9 @@ namespace CyanStars.Framework
             Timer = GetManager<TimerManager>();
             UI = GetManager<UIManager>();
             Logger = GetManager<LoggerManager>();
+            // Dialogue = GetManager<DialogueManager>();
+            File = GetManager<FileManager>();
+            Chart = GetManager<ChartManager>();
 
             //按优先级排序并初始化所有Manager
             Managers.Sort((x, y) => x.Priority.CompareTo(y.Priority));
@@ -116,7 +138,7 @@ namespace CyanStars.Framework
             {
                 if (RegisterAssemblies.Contains(assembly.GetName().Name))
                 {
-                   types.AddRange(assembly.GetTypes());
+                    types.AddRange(assembly.GetTypes());
                 }
             }
 
