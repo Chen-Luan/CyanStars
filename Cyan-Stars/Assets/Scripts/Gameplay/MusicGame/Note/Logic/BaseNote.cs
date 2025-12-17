@@ -27,7 +27,7 @@ namespace CyanStars.Gameplay.MusicGame
         /// <summary>
         /// 引用的变速组实例
         /// </summary>
-        protected SpeedGroup SpeedGroup;
+        protected SpeedTemplate SpeedTemplate;
 
         /// <summary>
         /// 视图层物体
@@ -59,7 +59,7 @@ namespace CyanStars.Gameplay.MusicGame
         {
             NoteClip = clip;
             NoteData = data;
-            SpeedGroup = new SpeedGroup(chartData.SpeedGroupDatas[data.SpeedGroupIndex]);
+            SpeedTemplate = new SpeedTemplate(chartData.SpeedGroupDatas[data.SpeedGroupIndex]);
 
             // 根据 beat 计算 JudgeTime
             // 注意 Offset 是作为空白时间直接加（或减）在 MisicTrack/MusicClip 中，与 Note 判定时间无关
@@ -79,7 +79,7 @@ namespace CyanStars.Gameplay.MusicGame
         private void OnBaseUpdate(float curLogicTime)
         {
             CurLogicTime = curLogicTime;
-            CurViewDistance = SpeedGroup.GetDistance(LogicTimeDistance * 1000f);
+            CurViewDistance = SpeedTemplate.GetDistance(LogicTimeDistance * 1000f);
             TryCreateViewObject();
 
             ViewObject?.OnUpdate(CurViewDistance);
