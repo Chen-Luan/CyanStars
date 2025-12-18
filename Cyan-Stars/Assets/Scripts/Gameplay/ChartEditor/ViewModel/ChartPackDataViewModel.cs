@@ -94,7 +94,11 @@ namespace CyanStars.Gameplay.ChartEditor.ViewModel
             }
 
             var oldChartPackData = Model.ChartPackData.Value;
-            var newChartPackData = new ChartPackData(oldChartPackData) { Title = newTitle }; // 小心浅拷贝，此处没有问题，其他地方修改 List<T> 时记得手动拷贝列表
+            var newChartPackData = new ChartPackData( // 这里不修改 List<T>，因此使用浅拷贝
+                oldChartPackData.Title, oldChartPackData.MusicVersionDatas, oldChartPackData.BpmGroup,
+                oldChartPackData.MusicPreviewStartBeat, oldChartPackData.MusicPreviewEndBeat, oldChartPackData.CoverFilePath,
+                oldChartPackData.CropStartPosition, oldChartPackData.CropHeight, oldChartPackData.ChartMetaDatas
+            );
 
             CommandManager.ExecuteCommand(new DelegateCommand(() =>
                 {
@@ -133,7 +137,11 @@ namespace CyanStars.Gameplay.ChartEditor.ViewModel
                 return;
             }
 
-            var newChartPackData = new ChartPackData(oldChartPackData) { MusicPreviewStartBeat = beat }; // 小心浅拷贝，此处没有问题，其他地方修改 List<T> 时记得手动拷贝列表
+            var newChartPackData = new ChartPackData( // 这里不修改 List<T>，因此使用浅拷贝
+                oldChartPackData.Title, oldChartPackData.MusicVersionDatas, oldChartPackData.BpmGroup,
+                oldChartPackData.MusicPreviewStartBeat, oldChartPackData.MusicPreviewEndBeat, oldChartPackData.CoverFilePath,
+                oldChartPackData.CropStartPosition, oldChartPackData.CropHeight, oldChartPackData.ChartMetaDatas
+            );
             CommandManager.ExecuteCommand(new DelegateCommand(() =>
                 {
                     Model.ChartPackData.Value = newChartPackData;
@@ -171,7 +179,11 @@ namespace CyanStars.Gameplay.ChartEditor.ViewModel
                 return;
             }
 
-            var newChartPackData = new ChartPackData(oldChartPackData) { MusicPreviewEndBeat = beat }; // 小心浅拷贝
+            var newChartPackData = new ChartPackData( // 这里不修改 List<T>，因此使用浅拷贝
+                oldChartPackData.Title, oldChartPackData.MusicVersionDatas, oldChartPackData.BpmGroup,
+                oldChartPackData.MusicPreviewStartBeat, oldChartPackData.MusicPreviewEndBeat, oldChartPackData.CoverFilePath,
+                oldChartPackData.CropStartPosition, oldChartPackData.CropHeight, oldChartPackData.ChartMetaDatas
+            );
             CommandManager.ExecuteCommand(new DelegateCommand(() =>
                 {
                     Model.ChartPackData.Value = newChartPackData;

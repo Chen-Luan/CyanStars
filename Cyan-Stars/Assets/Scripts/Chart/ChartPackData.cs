@@ -63,24 +63,7 @@ namespace CyanStars.Chart
         public List<ChartMetadata> ChartMetaDatas;
 
         /// <summary>
-        /// 执行浅拷贝
-        /// </summary>
-        public ChartPackData(ChartPackData oldChartPackData)
-        {
-            DataVersion = oldChartPackData.DataVersion;
-            Title = oldChartPackData.Title;
-            MusicVersionDatas = oldChartPackData.MusicVersionDatas;
-            BpmGroup = oldChartPackData.BpmGroup;
-            MusicPreviewStartBeat = oldChartPackData.MusicPreviewStartBeat;
-            MusicPreviewEndBeat = oldChartPackData.MusicPreviewEndBeat;
-            CoverFilePath = oldChartPackData.CoverFilePath;
-            CropStartPosition = oldChartPackData.CropStartPosition;
-            CropHeight = oldChartPackData.CropHeight;
-            ChartMetaDatas = oldChartPackData.ChartMetaDatas;
-        }
-
-        /// <summary>
-        /// 完整构造
+        /// 构造函数
         /// </summary>
         public ChartPackData(string title, List<MusicVersionData>? musicVersionDatas = null, BpmGroup? bpmGroup = null,
                              Beat? musicPreviewStartBeat = null, Beat? musicPreviewEndBeat = null, string? coverFilePath = null,
