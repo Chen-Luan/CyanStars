@@ -59,14 +59,14 @@ namespace CyanStars.Chart
         // 谱面元数据
 
         /// <summary>谱面元数据</summary>
-        public List<ChartMetadata> ChartMetaDatas;
+        public List<ChartMetaData> ChartMetaDatas;
 
         /// <summary>
         /// 构造函数
         /// </summary>
         public ChartPackData(string title, List<MusicVersionData>? musicVersionDatas = null, BpmGroup? bpmGroup = null,
                              Beat? musicPreviewStartBeat = null, Beat? musicPreviewEndBeat = null, string? coverFilePath = null,
-                             Vector2? cropPosition = null, float? cropHeight = null, List<ChartMetadata>? chartMetaDatas = null)
+                             Vector2? cropPosition = null, float? cropHeight = null, List<ChartMetaData>? chartMetaDatas = null)
         {
             DataVersion = 1;
             Title = title;
@@ -100,7 +100,7 @@ namespace CyanStars.Chart
             CoverFilePath = coverFilePath;
             CropStartPosition = cropPosition ?? Vector2.zero;
             CropHeight = cropHeight ?? 0;
-            ChartMetaDatas = chartMetaDatas ?? new List<ChartMetadata>();
+            ChartMetaDatas = chartMetaDatas ?? new List<ChartMetaData>();
         }
     }
 }
