@@ -9,7 +9,9 @@ using CyanStars.Framework.Logging;
 using CyanStars.Framework.Timeline;
 using CyanStars.Gameplay.Base;
 using CyanStars.Chart;
+using CyanStars.Framework.Timer;
 using CyanStars.Graphics.Band;
+using CyanStars.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -52,11 +54,11 @@ namespace CyanStars.Gameplay.MusicGame
 
 
         //  --- --- 时间轴相关对象 --- ---
+        private SmoothDspTimer smoothDspTimer;
         private Timeline timeline;
 
         //  --- --- 流程逻辑相关 --- ---
         private BaseInputReceiver inputReceiver;
-        private float lastTime = -float.Epsilon;
         private int preDistanceBarChangedCount;
 
 
@@ -73,6 +75,7 @@ namespace CyanStars.Gameplay.MusicGame
 
             //打开游戏场景
             var sceneHandler = await GameRoot.Asset.LoadSceneAsync(currentSceneInfo.ScenePath);
+            SceneManager.SetActiveScene(sceneHandler.Scene);
 
             if (sceneHandler.IsValid && sceneHandler.IsSuccess)
             {
@@ -124,10 +127,10 @@ namespace CyanStars.Gameplay.MusicGame
             // timelineData = null;
             // lrcText = null;
 
+            smoothDspTimer = null;
             timeline = null;
 
             inputReceiver = null;
-            lastTime = -float.Epsilon;
 
             preDistanceBarChangedCount = 0;
 
@@ -163,6 +166,8 @@ namespace CyanStars.Gameplay.MusicGame
                 return;
             }
 
+
+            GameRoot.Timer.UpdateTimer.Remove(UpdateTimeline);
             audioSource.Pause();
             inputReceiver?.EndReceive();
         }
@@ -177,6 +182,8 @@ namespace CyanStars.Gameplay.MusicGame
                 return;
             }
 
+            smoothDspTimer.Reset();
+            GameRoot.Timer.UpdateTimer.Add(UpdateTimeline);
             audioSource.UnPause();
             inputReceiver?.StartReceive();
         }
@@ -241,20 +248,16 @@ namespace CyanStars.Gameplay.MusicGame
 
             // 谱面
             runtimeChartPack = chartModule.SelectedRuntimeChartPack;
-            await chartModule.SelectChartDataAsync(0); // TODO: 根据选择的难度来加载谱面
-            if (chartModule.ChartData == null)
-            {
-                Debug.LogError("谱面加载失败");
-            }
-
+            chartData = chartModule.ChartData;
 
             // 音乐
             if (chartModule.SelectedMusicVersionIndex != null)
             {
                 MusicVersionData musicVersionData =
                     runtimeChartPack.ChartPackData.MusicVersionDatas[(int)chartModule.SelectedMusicVersionIndex];
+                string musicFilePath = PathUtil.Combine(runtimeChartPack.WorkspacePath, musicVersionData.AudioFilePath);
                 AudioClip music =
-                    (await GameRoot.Asset.LoadAssetAsync<AudioClip>(musicVersionData.AudioFilePath)).BindTo(sceneRoot).Asset;
+                    (await GameRoot.Asset.LoadAssetAsync<AudioClip>(musicFilePath)).BindTo(sceneRoot).Asset;
                 if (!music)
                 {
                     Debug.LogError($"谱包 {runtimeChartPack.ChartPackData.Title} 的音乐加载失败");
@@ -366,17 +369,14 @@ namespace CyanStars.Gameplay.MusicGame
         /// </summary>
         private void CreateTimeline()
         {
+            smoothDspTimer = new SmoothDspTimer();
             timeline = new Timeline(playingDataModule.CurTimelineLength);
-            timeline.OnStop += StopTimeline;
+            timeline.OnEndInMusicGameMode += StopTimeline;
 
             var chartContext = CreateChartContext();
 
             // 添加音符轨道
-            NoteTrackData noteTrackData = new NoteTrackData()
-            {
-                ClipDataList = new List<ChartData>() { chartData },
-                ChartContext = chartContext
-            };
+            NoteTrackData noteTrackData = new NoteTrackData() { ClipDataList = new List<ChartData>() { chartData }, ChartContext = chartContext };
             timeline.AddTrack(noteTrackData, NoteTrack.CreateClipFunc);
 
             // if (!string.IsNullOrEmpty(lrcText) && settingsModule.EnableLyricTrack)
@@ -460,6 +460,7 @@ namespace CyanStars.Gameplay.MusicGame
 
             playingDataModule.RunningTimeline = timeline;
 
+            smoothDspTimer.Reset();
             GameRoot.Timer.UpdateTimer.Add(UpdateTimeline);
 
             Debug.Log("时间轴创建完毕");
@@ -483,13 +484,11 @@ namespace CyanStars.Gameplay.MusicGame
         /// <summary>
         /// 更新时间轴
         /// </summary>
-        private void UpdateTimeline(float deltaTime, object userdata)
+        private void UpdateTimeline(double deltaTime, object userdata)
         {
-            float timelineDeltaTime = audioSource.time - lastTime;
-            lastTime = audioSource.time;
-
-            timeline.OnUpdate(timelineDeltaTime);
-            UpdateDistanceBar(timelineDeltaTime);
+            double smoothDeltaDspTime = smoothDspTimer.OnUpdate();
+            timeline.OnPlayingUpdate(smoothDeltaDspTime);
+            UpdateDistanceBar(smoothDeltaDspTime);
 
             //音游流程中 按下ESC打开暂停
             if (Input.GetKeyDown(KeyCode.Escape))
@@ -501,10 +500,10 @@ namespace CyanStars.Gameplay.MusicGame
         /// <summary>
         /// 更新判定误差指示
         /// </summary>
-        private void UpdateDistanceBar(float deltaTime)
+        private void UpdateDistanceBar(double smoothDeltaDspTime)
         {
             var data = playingDataModule.DistanceBarData;
-            data.ReduceHeight(deltaTime);
+            data.ReduceHeight(smoothDeltaDspTime);
             if (data.IsDataChangedAndSet(ref preDistanceBarChangedCount))
             {
                 band.UpdateBand(data.BarHeights);
@@ -516,8 +515,8 @@ namespace CyanStars.Gameplay.MusicGame
         /// </summary>
         private void StopTimeline()
         {
+            smoothDspTimer = null;
             timeline = null;
-            lastTime = -float.Epsilon;
             audioSource.clip = null;
 
             GameRoot.Timer.UpdateTimer.Remove(UpdateTimeline);
