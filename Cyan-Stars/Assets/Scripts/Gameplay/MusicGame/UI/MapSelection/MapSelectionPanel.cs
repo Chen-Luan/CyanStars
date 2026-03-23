@@ -66,6 +66,9 @@ namespace CyanStars.Gameplay.MusicGame
         {
             var musicGamePlayingDataModule = GameRoot.GetDataModule<MusicGamePlayingDataModule>();
             var chartModule = GameRoot.GetDataModule<ChartModule>();
+
+            chartModule.SelectChartPackData(0); // TODO: 改为玩家上次选择的序号
+
             CurrentSelectedMap = MapItemData.Create((int)chartModule.SelectedChartPackIndex,
                 chartModule.SelectedRuntimeChartPack);
 

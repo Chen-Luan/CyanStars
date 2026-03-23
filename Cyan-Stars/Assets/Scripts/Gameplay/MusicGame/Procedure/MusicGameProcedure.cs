@@ -10,6 +10,7 @@ using CyanStars.Framework.Timeline;
 using CyanStars.Gameplay.Base;
 using CyanStars.Chart;
 using CyanStars.Graphics.Band;
+using CyanStars.Utils;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -73,6 +74,7 @@ namespace CyanStars.Gameplay.MusicGame
 
             //打开游戏场景
             var sceneHandler = await GameRoot.Asset.LoadSceneAsync(currentSceneInfo.ScenePath);
+            SceneManager.SetActiveScene(sceneHandler.Scene);
 
             if (sceneHandler.IsValid && sceneHandler.IsSuccess)
             {
@@ -241,7 +243,7 @@ namespace CyanStars.Gameplay.MusicGame
 
             // 谱面
             runtimeChartPack = chartModule.SelectedRuntimeChartPack;
-            await chartModule.SelectChartDataAsync(0); // TODO: 根据选择的难度来加载谱面
+            chartData = chartModule.ChartData;
             if (chartModule.ChartData == null)
             {
                 Debug.LogError("谱面加载失败");
@@ -254,7 +256,7 @@ namespace CyanStars.Gameplay.MusicGame
                 MusicVersionData musicVersionData =
                     runtimeChartPack.ChartPackData.MusicVersionDatas[(int)chartModule.SelectedMusicVersionIndex];
                 AudioClip music =
-                    (await GameRoot.Asset.LoadAssetAsync<AudioClip>(musicVersionData.AudioFilePath)).BindTo(sceneRoot).Asset;
+                    (await GameRoot.Asset.LoadAssetAsync<AudioClip>(PathUtil.Combine(runtimeChartPack.WorkspacePath, musicVersionData.AudioFilePath))).BindTo(sceneRoot).Asset;
                 if (!music)
                 {
                     Debug.LogError($"谱包 {runtimeChartPack.ChartPackData.Title} 的音乐加载失败");
@@ -372,11 +374,7 @@ namespace CyanStars.Gameplay.MusicGame
             var chartContext = CreateChartContext();
 
             // 添加音符轨道
-            NoteTrackData noteTrackData = new NoteTrackData()
-            {
-                ClipDataList = new List<ChartData>() { chartData },
-                ChartContext = chartContext
-            };
+            NoteTrackData noteTrackData = new NoteTrackData() { ClipDataList = new List<ChartData>() { chartData }, ChartContext = chartContext };
             timeline.AddTrack(noteTrackData, NoteTrack.CreateClipFunc);
 
             // if (!string.IsNullOrEmpty(lrcText) && settingsModule.EnableLyricTrack)
@@ -467,8 +465,8 @@ namespace CyanStars.Gameplay.MusicGame
 
         private ChartContext CreateChartContext()
         {
-            // TODO: 传入玩家速度
-            var speedTemplateProvider = new SpeedTemplateProvider(new SpeedTemplateBaker(), 1f);
+            // TODO: 传入玩家速
+            var speedTemplateProvider = new SpeedTemplateProvider(new SpeedTemplateBaker(), 100f);
             speedTemplateProvider.PopulateSpeedTemplates(chartData.SpeedGroupDatas);
 
             List<BpmGroupItem> bpmGroup = new List<BpmGroupItem>();

@@ -7,7 +7,6 @@ using UnityEngine.EventSystems;
 
 namespace CyanStars.Gameplay.MusicGame
 {
-
     [RequireComponent(typeof(ScrollRect))]
     [RequireComponent(typeof(RectTransform))]
     public class CircularLayout : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IScrollHandler
@@ -60,16 +59,26 @@ namespace CyanStars.Gameplay.MusicGame
         void Awake()
         {
             scrollRect = transform.GetComponent<ScrollRect>();
-            scrollRect.scrollSensitivity = 0;  // 禁用鼠标滚轮
-
+            scrollRect.scrollSensitivity = 0; // 禁用鼠标滚轮
             curFirstItemAngle = OffsetAngle;
+        }
 
+        void Start()
+        {
             float paddingAngle = (Radius != 0) ? (Padding / (2 * Mathf.PI * Radius) * 360) : 0;
+            scrollRect.onValueChanged.AddListener((Vector2 value) =>
+            {
+                if (float.IsNaN(value.y))
+                {
+                    curFirstItemAngle = 100;
+                }
+                else
+                {
+                    float itemsTotalAngle = (Items.Count - 1) * paddingAngle; // 所有item整体所占的角度
+                    float centerAngle = (StartAngle + EndAngle) / 2; // 圆环中央的角度
+                    curFirstItemAngle = centerAngle - (1 - value.y) * itemsTotalAngle;
+                }
 
-            scrollRect.onValueChanged.AddListener((Vector2 value) => {
-                float itemsTotalAngle = (Items.Count - 1) * paddingAngle;   // 所有item整体所占的角度
-                float centerAngle = (StartAngle + EndAngle) / 2;            // 圆环中央的角度
-                curFirstItemAngle = centerAngle - (1 - value.y) * itemsTotalAngle;
                 lastMoveTIme = Time.unscaledTime;
             });
         }
@@ -79,7 +88,7 @@ namespace CyanStars.Gameplay.MusicGame
             float curItemAngle = curFirstItemAngle;
             float paddingAngle = (Radius != 0) ? (Padding / (2 * Mathf.PI * Radius) * 360) : 0;
 
-            for(int i = 0; i < Items.Count; i ++)
+            for (int i = 0; i < Items.Count; i++)
             {
                 if (curItemAngle > EndAngle || curItemAngle < StartAngle)
                 {
@@ -101,10 +110,11 @@ namespace CyanStars.Gameplay.MusicGame
                     {
                         alpha = 1;
                     }
-                    else  // distanceToCenter in [20, centerAngle - StartAngle]
+                    else // distanceToCenter in [20, centerAngle - StartAngle]
                     {
                         alpha = 1 - Mathf.Pow((distanceToCenter - 20) / (centerAngle - StartAngle - 20), 0.5f);
                     }
+
                     Items[i].SetAlpha(alpha);
                 }
 
@@ -140,8 +150,8 @@ namespace CyanStars.Gameplay.MusicGame
 
         public int GetCurrentCentralItemIndex()
         {
-            float centerAngle = (StartAngle + EndAngle) / 2;  // 计算出圆环中心的角度
-            float paddingAngle = (Radius != 0) ? (Padding / (2 * Mathf.PI * Radius) * 360) : 0;  // 计算item之间的角度间隔
+            float centerAngle = (StartAngle + EndAngle) / 2; // 计算出圆环中心的角度
+            float paddingAngle = (Radius != 0) ? (Padding / (2 * Mathf.PI * Radius) * 360) : 0; // 计算item之间的角度间隔
             // 计算当前最靠近圆环中心的item的index
             /*
             使用Mathf.Max和Mathf.Min将index约束到[0, Items.Count - 1]
@@ -186,7 +196,7 @@ namespace CyanStars.Gameplay.MusicGame
             Vector2 deltaPosition = targetPosition - scrollRect.content.anchoredPosition;
             int step = 10;
 
-            for (int i = 0; i < step; i ++)
+            for (int i = 0; i < step; i++)
             {
                 scrollRect.content.anchoredPosition += deltaPosition * 1 / step;
                 yield return null;
