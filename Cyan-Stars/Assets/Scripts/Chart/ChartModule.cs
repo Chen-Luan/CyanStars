@@ -81,8 +81,6 @@ namespace CyanStars.Chart
         /// </summary>
         public ChartData? ChartData { get; private set; }
 
-        private string? lastChartDataHash;
-
 
         public override void OnInit()
         {
@@ -299,7 +297,6 @@ namespace CyanStars.Chart
         public void CancelSelectChartData()
         {
             ChartData = null;
-            lastChartDataHash = null;
         }
 
         /// <summary>
@@ -345,7 +342,6 @@ namespace CyanStars.Chart
 
                 Debug.Log("已加载了新的的谱面");
                 ChartData = chartData;
-                lastChartDataHash = metaData.ChartHash;
             }
         }
 
