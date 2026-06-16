@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CyanStars.Chart;
 using CyanStars.Framework;
@@ -33,6 +34,7 @@ namespace CyanStars.Gameplay.MusicGame
         private GameObject difficultyItemTemplate = null!;
 
 
+        private CancellationTokenSource? cts;
         private int validDifficultyCounts = 0; // 当前谱包内可游玩的谱面计数
         private static UIManager UIManager => GameRoot.UI;
         private readonly List<DifficultyItemTemplate> DifficultyItems = new List<DifficultyItemTemplate>();
@@ -41,6 +43,9 @@ namespace CyanStars.Gameplay.MusicGame
         protected override void OnRectTransformDimensionsChange()
         {
             base.OnRectTransformDimensionsChange();
+
+            if (scrollRect == null || scrollContentRect == null || verticalLayoutGroup == null || validDifficultyCounts <= 0)
+                return;
 
             UpdateContentHeight(validDifficultyCounts);
             RefreshButtonsHeight();
@@ -54,6 +59,10 @@ namespace CyanStars.Gameplay.MusicGame
         /// <exception cref="InvalidDataException">没有可游玩难度</exception>
         public async Task SetDifficultiesAsync(RuntimeChartPack runtimeChartPack)
         {
+            cts?.Cancel();
+            cts?.Dispose();
+            cts = new CancellationTokenSource();
+
             var metaDatas = runtimeChartPack.ChartPackData.ChartMetaDatas;
             var validMetaDatas = metaDatas.Where(metaData => metaData.Difficulty != null).ToList();
             validDifficultyCounts = validMetaDatas.Count;
@@ -62,7 +71,8 @@ namespace CyanStars.Gameplay.MusicGame
             UpdateContentHeight(validDifficultyCounts);
 
             // 释放旧难度按钮
-            List<BaseUIItem> baseItems = DifficultyItems.Cast<BaseUIItem>().ToList();
+            List<BaseUIItem> baseItems = new();
+            baseItems.AddRange(DifficultyItems);
             UIManager.ReleaseUIItems(baseItems);
             DifficultyItems.Clear();
 
@@ -75,6 +85,17 @@ namespace CyanStars.Gameplay.MusicGame
             }
 
             await Task.WhenAll(tasks);
+            if (cts.Token.IsCancellationRequested || this == null || gameObject == null)
+            {
+                // 如果被取消，释放刚刚获取的 UI Items 防止内存泄露
+                List<BaseUIItem> tempItems = new();
+                foreach (var task in tasks)
+                    if (task.Status == TaskStatus.RanToCompletion && task.Result != null)
+                        tempItems.Add(task.Result);
+
+                UIManager.ReleaseUIItems(tempItems);
+                return;
+            }
 
             for (int i = 0; i < tasks.Count; i++)
             {
@@ -144,7 +165,6 @@ namespace CyanStars.Gameplay.MusicGame
             foreach (var item in DifficultyItems)
                 item.SetRectTransformHeight(height);
 
-            Canvas.ForceUpdateCanvases();
             LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContentRect);
         }
     }
