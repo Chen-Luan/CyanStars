@@ -2315,6 +2315,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3057735370232983356}
+  - component: {fileID: 4968421386822654608}
+  - component: {fileID: 2498225889369333642}
   m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
@@ -2341,6 +2343,51 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &4968421386822654608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684353436943161987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.VerticalLayoutGroup
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 0
+  m_Spacing: 0
+  m_ChildForceExpandWidth: 1
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 1
+  m_ChildControlHeight: 0
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
+--- !u!114 &2498225889369333642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684353436943161987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ace69bd427df458d86e9f3a316536c57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CyanStars::CyanStars.Utils.RadioButton.RadioButtonGroup
+  allowSwitchOff: 0
+  onSelectedItemChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  onCollectionChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4797310167965212448
 GameObject:
   m_ObjectHideFlags: 0
@@ -3135,8 +3182,9 @@ GameObject:
   - component: {fileID: 7979954163243321258}
   - component: {fileID: 3617255048120856064}
   - component: {fileID: 65334705567687665}
+  - component: {fileID: 3259326323518693380}
   m_Layer: 5
-  m_Name: Difficulties
+  m_Name: DifficultiesScrollView
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3230,6 +3278,22 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3259326323518693380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5262717993204310141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b952bdd67124bb4185c776ea83108af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CyanStars::CyanStars.Gameplay.MusicGame.DifficultiesScrollView
+  scrollRect: {fileID: 65334705567687665}
+  scrollContentRect: {fileID: 3057735370232983356}
+  verticalLayoutGroup: {fileID: 4968421386822654608}
+  radioButtonGroup: {fileID: 2498225889369333642}
 --- !u!1 &5291443634676349953
 GameObject:
   m_ObjectHideFlags: 0
