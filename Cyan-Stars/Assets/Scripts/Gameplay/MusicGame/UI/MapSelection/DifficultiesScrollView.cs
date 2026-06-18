@@ -53,13 +53,13 @@ namespace CyanStars.Gameplay.MusicGame
         protected override void OnEnable()
         {
             base.OnEnable();
-            chartModule.OnSelectedRuntimeChartPackChanged += SetDifficultiesAsync;
+            chartModule.OnSelectedChartChanged += SetDifficultiesAsync;
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            chartModule.OnSelectedRuntimeChartPackChanged -= SetDifficultiesAsync;
+            chartModule.OnSelectedChartChanged -= SetDifficultiesAsync;
         }
 
         protected override void OnRectTransformDimensionsChange()
