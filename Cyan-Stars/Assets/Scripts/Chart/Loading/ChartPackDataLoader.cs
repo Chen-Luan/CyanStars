@@ -42,7 +42,7 @@ namespace CyanStars.Chart.Loading
             InternalChartPackListSO internalChartPackListSO = internalListHandler.Asset;
             foreach (var item in internalChartPackListSO.InternalChartPacks)
             {
-                paths.Add(item.Path);
+                paths.Add(item.ChartPackFilePath);
                 levelsList.Add(item.Levels);
             }
 
@@ -53,8 +53,8 @@ namespace CyanStars.Chart.Loading
                 Directory.CreateDirectory(playerChartPacksFolderPath);
             }
 
-            var playerChartPaths = Directory.EnumerateFiles(playerChartPacksFolderPath, ChartPackFileName,
-                SearchOption.AllDirectories);
+            var playerChartPaths =
+                Directory.EnumerateFiles(playerChartPacksFolderPath, ChartPackFileName, SearchOption.AllDirectories);
             foreach (var path in playerChartPaths)
             {
                 paths.Add(path.Replace('\\', '/'));
@@ -93,14 +93,13 @@ namespace CyanStars.Chart.Loading
                 }
 
                 bool isInternal = i < internalPacksCount;
-                HashSet<ChartDifficulty> difficultiesAbleToPlay = CalculateDifficultiesCount(chartPackData);
-                if (isInternal && difficultiesAbleToPlay.Count != 4)
+                if (isInternal && VerifyInternalChartPackDifficultiesCount(chartPackData))
                 {
                     Debug.LogWarning($"某个内置谱包难度计数不等于 4：{chartPackData.Title}，当前已允许加载，正式发布时应当修复");
                 }
 
                 ChartPackLevels levels = levelsList[i];
-                newPacks.Add(new RuntimeChartPack(chartPackData, isInternal, levels, workspacePath, difficultiesAbleToPlay));
+                newPacks.Add(new RuntimeChartPack(chartPackData, isInternal, levels, workspacePath));
             }
 
             return newPacks;
@@ -117,11 +116,13 @@ namespace CyanStars.Chart.Loading
             if (chartPackData == null)
                 throw new NullReferenceException("尝试加载的谱包为 null，加载失败！");
 
-            HashSet<ChartDifficulty> difficultiesAbleToPlay = CalculateDifficultiesCount(chartPackData);
-
             Debug.Log($"已增量加载谱包 {chartPackFilePath}");
-            return new RuntimeChartPack(chartPackData, false, new ChartPackLevels(),
-                Path.GetDirectoryName(chartPackFilePath), difficultiesAbleToPlay);
+            return new RuntimeChartPack(
+                chartPackData,
+                false,
+                new ChartPackLevels(),
+                Path.GetDirectoryName(chartPackFilePath)
+            );
         }
 
         /// <summary>
@@ -136,30 +137,26 @@ namespace CyanStars.Chart.Loading
             if (chartPackData == null)
                 throw new NullReferenceException("尝试加载的谱包为 null，增量更新失败！");
 
-            HashSet<ChartDifficulty> difficultiesAbleToPlay = CalculateDifficultiesCount(chartPackData);
-
             Debug.Log($"已增量更新谱包 {chartPackFilePath}");
-            return new RuntimeChartPack(chartPackData, false, new ChartPackLevels(),
-                Path.GetDirectoryName(chartPackFilePath), difficultiesAbleToPlay);
+            return new RuntimeChartPack(
+                chartPackData,
+                false,
+                new ChartPackLevels(),
+                Path.GetDirectoryName(chartPackFilePath)
+            );
         }
 
         /// <summary>
-        /// 统计谱包中各难度的唯一数量，返回可游玩的难度集合
+        /// 校验谱包是否各个难度都有且仅有一张谱面，且不存在 null 难度谱面
         /// </summary>
-        private static HashSet<ChartDifficulty> CalculateDifficultiesCount(ChartPackData chartPackData)
+        private static bool VerifyInternalChartPackDifficultiesCount(ChartPackData chartPackData)
         {
             int c0 = chartPackData.ChartMetaDatas.Count(cmd => cmd.Difficulty == ChartDifficulty.KuiXing);
             int c1 = chartPackData.ChartMetaDatas.Count(cmd => cmd.Difficulty == ChartDifficulty.QiMing);
             int c2 = chartPackData.ChartMetaDatas.Count(cmd => cmd.Difficulty == ChartDifficulty.TianShu);
             int c3 = chartPackData.ChartMetaDatas.Count(cmd => cmd.Difficulty == ChartDifficulty.WuYin);
-
-            var difficultiesAbleToPlay = new HashSet<ChartDifficulty>();
-            if (c0 == 1) difficultiesAbleToPlay.Add(ChartDifficulty.KuiXing);
-            if (c1 == 1) difficultiesAbleToPlay.Add(ChartDifficulty.QiMing);
-            if (c2 == 1) difficultiesAbleToPlay.Add(ChartDifficulty.TianShu);
-            if (c3 == 1) difficultiesAbleToPlay.Add(ChartDifficulty.WuYin);
-
-            return difficultiesAbleToPlay;
+            int cn = chartPackData.ChartMetaDatas.Count(cmd => cmd.Difficulty == null);
+            return c0 == 1 && c1 == 1 && c2 == 1 && c3 == 1 && cn == 0;
         }
     }
 }
