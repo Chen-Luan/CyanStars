@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CyanStars.Framework;
 using CyanStars.Utils;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace CyanStars.Chart
 {
@@ -70,6 +71,8 @@ namespace CyanStars.Chart
         /// </summary>
         public ChartData? ChartData { get; private set; }
 
+        public Action<RuntimeChartPack?, int>? OnSelectedRuntimeChartPackChanged;
+
 
         public override void OnInit()
         {
@@ -110,7 +113,7 @@ namespace CyanStars.Chart
 
 
         /// <summary>
-        /// 选择一个谱包，并自动调整选定的谱面、音乐、难度
+        /// 选择一个谱包，并自动调整选定的音乐和谱面
         /// </summary>
         /// <param name="index">新的谱包下标</param>
         public void SelectChartPackData(int index)
@@ -119,6 +122,7 @@ namespace CyanStars.Chart
             SelectedChartPackIndex = index;
             SelectedChartMetadataIndex = (RuntimeChartPacks[index].ChartPackData.ChartMetaDatas.Count >= 1) ? 0 : null;
             SelectedMusicVersionIndex = (RuntimeChartPacks[index].ChartPackData.MusicVersionDatas.Count >= 1) ? 0 : null;
+            _ = SelectChartDataAsync(0); // TODO: 记住玩家上次在此谱包中选择的谱面
         }
 
         /// <summary>
@@ -140,6 +144,8 @@ namespace CyanStars.Chart
 
             SelectedChartMetadataIndex = index;
             await LoadChartDataAsync();
+
+            OnSelectedRuntimeChartPackChanged?.Invoke(SelectedRuntimeChartPack, index);
         }
 
         /// <summary>
@@ -151,6 +157,7 @@ namespace CyanStars.Chart
             SelectedMusicVersionIndex = null;
             SelectedChartMetadataIndex = null;
             CancelSelectChartData();
+            OnSelectedRuntimeChartPackChanged?.Invoke(SelectedRuntimeChartPack, 0);
         }
 
         /// <summary>

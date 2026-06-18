@@ -34,11 +34,33 @@ namespace CyanStars.Gameplay.MusicGame
         private GameObject difficultyItemTemplate = null!;
 
 
+        private ChartModule chartModule = null!;
+
+        private RuntimeChartPack? lastRuntimeChartPack = null; // 上次选中的谱包
+        private int laseSelectChartIndex = -1; // 上次选中的谱面下标
         private CancellationTokenSource? cts;
         private int validDifficultyCounts = 0; // 当前谱包内可游玩的谱面计数
         private static UIManager UIManager => GameRoot.UI;
-        private readonly List<DifficultyItemTemplate> DifficultyItems = new List<DifficultyItemTemplate>();
+        private readonly List<DifficultyItemTemplate> DifficultyItems = new();
 
+
+        protected override void Start()
+        {
+            base.Start();
+            chartModule = GameRoot.GetDataModule<ChartModule>();
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            chartModule.OnSelectedRuntimeChartPackChanged += SetDifficultiesAsync;
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            chartModule.OnSelectedRuntimeChartPackChanged -= SetDifficultiesAsync;
+        }
 
         protected override void OnRectTransformDimensionsChange()
         {
@@ -53,19 +75,24 @@ namespace CyanStars.Gameplay.MusicGame
 
 
         /// <summary>
-        /// 清除旧难度按钮列表并生成新难度列表
+        /// 清除旧难度按钮列表并生成新难度列表，可以一并指定选中哪个谱面
         /// </summary>
         /// <param name="runtimeChartPack">运行时谱包</param>
+        /// <param name="selectChartIndex">要选中的谱面下标</param>
         /// <exception cref="InvalidDataException">没有可游玩难度</exception>
-        public async Task SetDifficultiesAsync(RuntimeChartPack runtimeChartPack)
+        private async void SetDifficultiesAsync(RuntimeChartPack? runtimeChartPack, int selectChartIndex)
         {
+            if (runtimeChartPack == lastRuntimeChartPack && selectChartIndex == laseSelectChartIndex)
+                return;
+
+            // 卸载旧谱面
             cts?.Cancel();
             cts?.Dispose();
             cts = new CancellationTokenSource();
 
-            var metaDatas = runtimeChartPack.ChartPackData.ChartMetaDatas;
-            var validMetaDatas = metaDatas.Where(metaData => metaData.Difficulty != null).ToList();
-            validDifficultyCounts = validMetaDatas.Count;
+            var metaDatas = runtimeChartPack?.ChartPackData.ChartMetaDatas;
+            var validMetaDatas = metaDatas?.Where(metaData => metaData.Difficulty != null).ToList();
+            validDifficultyCounts = validMetaDatas?.Count ?? 0;
 
             // 更新 scrollContent 总高度
             UpdateContentHeight(validDifficultyCounts);
@@ -75,6 +102,25 @@ namespace CyanStars.Gameplay.MusicGame
             baseItems.AddRange(DifficultyItems);
             UIManager.ReleaseUIItems(baseItems);
             DifficultyItems.Clear();
+
+            // 检查谱包是否有效，更新缓存变量
+            if (runtimeChartPack == null || metaDatas == null || validMetaDatas == null)
+            {
+                lastRuntimeChartPack = null;
+                laseSelectChartIndex = -1;
+                return;
+            }
+            else if (validDifficultyCounts == 0)
+            {
+                lastRuntimeChartPack = runtimeChartPack;
+                laseSelectChartIndex = -1;
+                return;
+            }
+            else
+            {
+                lastRuntimeChartPack = runtimeChartPack;
+                laseSelectChartIndex = selectChartIndex;
+            }
 
             // 取回新难度按钮，注入参数，设置高度和横坐标
             List<Task<DifficultyItemTemplate>> tasks = new();
@@ -101,9 +147,8 @@ namespace CyanStars.Gameplay.MusicGame
             {
                 var difficultyItem = tasks[i].Result;
                 var metadata = validMetaDatas[i];
-                // TODO: 记住玩家上次在这个谱包内选择的是哪一张谱面，下次直接打开
                 // TODO: 内置谱 text 改为难度+定数（国际化字段），玩家谱包 text 改为谱面标题
-                difficultyItem.Init(radioButtonGroup, metadata.Difficulty!.Value, i == 0, "TODO");
+                difficultyItem.Init(radioButtonGroup, metadata.Difficulty!.Value, i == selectChartIndex, "TODO");
                 DifficultyItems.Add(difficultyItem);
             }
 
