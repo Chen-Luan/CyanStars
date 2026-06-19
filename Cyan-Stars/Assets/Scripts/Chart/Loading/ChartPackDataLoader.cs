@@ -93,7 +93,7 @@ namespace CyanStars.Chart.Loading
                 }
 
                 bool isInternal = i < internalPacksCount;
-                if (isInternal && VerifyInternalChartPackDifficultiesCount(chartPackData))
+                if (isInternal && !VerifyInternalChartPackDifficultiesCount(chartPackData))
                 {
                     Debug.LogWarning($"某个内置谱包难度计数不等于 4：{chartPackData.Title}，当前已允许加载，正式发布时应当修复");
                 }
