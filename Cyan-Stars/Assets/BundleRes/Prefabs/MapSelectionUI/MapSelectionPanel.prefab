@@ -3294,6 +3294,7 @@ MonoBehaviour:
   scrollContentRect: {fileID: 3057735370232983356}
   verticalLayoutGroup: {fileID: 4968421386822654608}
   radioButtonGroup: {fileID: 2498225889369333642}
+  difficultyItemTemplate: {fileID: 487640743228848773, guid: 5ddafb92e16d9bc40b36744dde3fd40f, type: 3}
 --- !u!1 &5291443634676349953
 GameObject:
   m_ObjectHideFlags: 0

@@ -34,7 +34,7 @@ namespace CyanStars.Gameplay.MusicGame
         private GameObject difficultyItemTemplate = null!;
 
 
-        private ChartModule chartModule = null!;
+        private ChartModule? chartModule;
 
         private RuntimeChartPack? lastRuntimeChartPack = null; // 上次选中的谱包
         private int laseSelectChartIndex = -1; // 上次选中的谱面下标
@@ -44,22 +44,17 @@ namespace CyanStars.Gameplay.MusicGame
         private readonly List<DifficultyItemTemplate> DifficultyItems = new();
 
 
-        protected override void Start()
-        {
-            base.Start();
-            chartModule = GameRoot.GetDataModule<ChartModule>();
-        }
-
         protected override void OnEnable()
         {
             base.OnEnable();
+            chartModule ??= GameRoot.GetDataModule<ChartModule>();
             chartModule.OnSelectedChartChanged += SetDifficultiesAsync;
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
-            chartModule.OnSelectedChartChanged -= SetDifficultiesAsync;
+            chartModule!.OnSelectedChartChanged -= SetDifficultiesAsync;
         }
 
         protected override void OnRectTransformDimensionsChange()
