@@ -57,12 +57,9 @@ MonoBehaviour:
   qiMingUnSelectedSprite: {fileID: 21300000, guid: de2182076898b184eb1059a018d75cda, type: 3}
   qiMingSelectedSprite: {fileID: 21300000, guid: b3cab055d230bd947a37f3035e0cfa73, type: 3}
   tianShuUnselectedSprite: {fileID: 21300000, guid: 0c99f47cc997d0d4b9eb89192942ce96, type: 3}
-  tianShuSelectedSprite: {fileID: 21300000, guid: 0c99f47cc997d0d4b9eb89192942ce96, type: 3}
+  tianShuSelectedSprite: {fileID: 21300000, guid: 242652b7a642bb64697cc84a1945d854, type: 3}
   wuYinUnselectedSprite: {fileID: 21300000, guid: 2b04f567001395b4497a1137d3cc3b51, type: 3}
   wuYinSelectedSprite: {fileID: 21300000, guid: 720f0c1dff6e8884495d09f80151ba4f, type: 3}
-  OnValueChanged:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1 &5138476563510596950
 GameObject:
   m_ObjectHideFlags: 0

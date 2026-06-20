@@ -68,7 +68,7 @@ namespace CyanStars.Gameplay.MusicGame
 
 
         /// <summary>
-        /// 清除旧难度按钮列表并生成新难度列表，可以一并指定选中哪个谱面
+        /// 清除旧难度按钮列表并生成新难度列表
         /// </summary>
         /// <param name="runtimeChartPack">运行时谱包</param>
         private async void SetDifficultiesAsync(RuntimeChartPack? runtimeChartPack)
@@ -130,7 +130,7 @@ namespace CyanStars.Gameplay.MusicGame
             int count = 0;
             for (int i = 0; i < runtimeChartPack.ChartPackData.ChartMetaDatas.Count; i++)
             {
-                if (runtimeChartPack.ChartPackData.ChartMetaDatas[i].Difficulty != null)
+                if (runtimeChartPack.ChartPackData.ChartMetaDatas[i].Difficulty == null)
                     continue;
 
                 var difficultyItem = tasks[i].Result;
@@ -189,7 +189,7 @@ namespace CyanStars.Gameplay.MusicGame
         }
 
         /// <summary>
-        /// 在设置完难度或 Canvas 高度变化时，更新所有难度按钮的高度
+        /// 在重选谱包或 Canvas 高度变化时，更新所有难度按钮的高度
         /// </summary>
         private void RefreshButtonsHeight()
         {
