@@ -1,7 +1,6 @@
 #nullable enable
 
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,12 +46,14 @@ namespace CyanStars.Gameplay.MusicGame
             base.OnEnable();
             chartModule ??= GameRoot.GetDataModule<ChartModule>();
             chartModule.OnSelectedChartPackChanged += SetDifficultiesAsync;
+            scrollRect.onValueChanged.AddListener(UpdateDifficultyItemsPosX);
         }
 
         protected override void OnDisable()
         {
             base.OnDisable();
             chartModule!.OnSelectedChartPackChanged -= SetDifficultiesAsync;
+            scrollRect.onValueChanged.RemoveListener(UpdateDifficultyItemsPosX);
         }
 
         protected override void OnRectTransformDimensionsChange()
@@ -73,7 +74,7 @@ namespace CyanStars.Gameplay.MusicGame
         /// <param name="runtimeChartPack">运行时谱包</param>
         private async void SetDifficultiesAsync(RuntimeChartPack? runtimeChartPack)
         {
-            // 卸载旧谱面
+            // 卸载旧谱面难度
             cts?.Cancel();
             cts?.Dispose();
             cts = new CancellationTokenSource();
@@ -143,7 +144,7 @@ namespace CyanStars.Gameplay.MusicGame
             }
 
             RefreshButtonsHeight();
-            // TODO: 初始化完毕后更新一次物体横坐标，当滚动 ScrollRect 时也要每帧更新。
+            UpdateDifficultyItemsPosX();
         }
 
 
@@ -172,6 +173,36 @@ namespace CyanStars.Gameplay.MusicGame
                     scrollContentRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, contentHeight);
                     break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// 兼容 Unity 事件签名的函数
+        /// </summary>
+        private void UpdateDifficultyItemsPosX(Vector2 _) => UpdateDifficultyItemsPosX();
+
+        /// <summary>
+        /// 更新各元素的横向位置
+        /// </summary>
+        private void UpdateDifficultyItemsPosX()
+        {
+            RectTransform viewportRect = scrollRect.viewport;
+            float viewportHeight = viewportRect.rect.height;
+
+            foreach (var item in DifficultyItems)
+            {
+                RectTransform itemRect = (RectTransform)item.transform;
+
+                // 将 Item 的世界坐标转换为 Viewport 的局部坐标
+                Vector3 localPos = viewportRect.InverseTransformPoint(itemRect.position);
+
+                // 计算在视口中的归一化位置
+                float normalizedY = localPos.y / viewportHeight + 0.5f;
+                normalizedY = Mathf.Clamp01(normalizedY);
+
+                // 应用三角函数曲线计算 X 轴的偏移比率
+                float curveRatePosX = Mathf.Sin(normalizedY * Mathf.PI);
+                item.SetRadioButtonObjectPosXByRate(curveRatePosX);
             }
         }
 
