@@ -48,7 +48,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   WillDestroy: 1
   DestroyTime: 1
-  ParticleSystemList: []
 --- !u!1 &5949172756680306902
 GameObject:
   m_ObjectHideFlags: 0
@@ -76,7 +75,7 @@ Transform:
   m_GameObject: {fileID: 5949172756680306902}
   serializedVersion: 2
   m_LocalRotation: {x: -0.9914449, y: -0, z: -0, w: 0.13052614}
-  m_LocalPosition: {x: 0, y: 0.1, z: 0.3}
+  m_LocalPosition: {x: 0, y: 0.001, z: 0.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4952,8 +4951,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8143964232751612224}
-  - component: {fileID: 1994146493810534228}
-  - component: {fileID: 7663909809973461300}
+  - component: {fileID: 308847397530164466}
+  - component: {fileID: 3535124696405483951}
+  - component: {fileID: 4073982691653294851}
   m_Layer: 0
   m_Name: HitEffectSequence
   m_TagString: Untagged
@@ -4970,15 +4970,22 @@ Transform:
   m_GameObject: {fileID: 8546795806431789678}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_LocalPosition: {x: 0, y: 0.001, z: 0}
+  m_LocalScale: {x: 10, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 479875854288579026}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
---- !u!212 &1994146493810534228
-SpriteRenderer:
-  serializedVersion: 2
+--- !u!33 &308847397530164466
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8546795806431789678}
+  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &3535124696405483951
+MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -4990,9 +4997,9 @@ SpriteRenderer:
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 2
   m_RayTraceProcedural: 0
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
@@ -5002,7 +5009,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 08793f79f052db242be0c00a14eb184a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5015,7 +5022,7 @@ SpriteRenderer:
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
+  m_SelectedEditorRenderState: 3
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
@@ -5025,17 +5032,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 986ca3e6fff248c4880662d1f52280d3, type: 3}
-  m_Color: {r: 1, g: 0.094117604, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
---- !u!114 &7663909809973461300
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4073982691653294851
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5044,42 +5042,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 8546795806431789678}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bfd53fb441c46359b7fccf869a48023, type: 3}
+  m_Script: {fileID: 11500000, guid: b837982721f95e5488cea6fb5a87c1fa, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  frames:
-  - {fileID: 21300000, guid: 986ca3e6fff248c4880662d1f52280d3, type: 3}
-  - {fileID: 21300000, guid: a06c5d5cf823b7b4bbac9bf80a754d40, type: 3}
-  - {fileID: 21300000, guid: d2cac81eb051e5847835302ec2cfdfab, type: 3}
-  - {fileID: 21300000, guid: d56ebad5ef7c09e4d99d514dda9f1b3c, type: 3}
-  - {fileID: 21300000, guid: 01b9343fb7ca19a4796bed32102edd67, type: 3}
-  - {fileID: 21300000, guid: 4cf6c3c91f2fefd4fb30f8f5fa28f5f5, type: 3}
-  - {fileID: 21300000, guid: 9f6353bd0d12c9b439452cc2997c6430, type: 3}
-  - {fileID: 21300000, guid: 4cf8d068cbc0c9f48a58e8ad8c53ad7a, type: 3}
-  - {fileID: 21300000, guid: 4a877e654c71ed347b144bd3ee7fe25e, type: 3}
-  - {fileID: 21300000, guid: 33f01136499a87045a39e3df005ca5a1, type: 3}
-  - {fileID: 21300000, guid: 7994ace24c435e24c9a645504c906e26, type: 3}
-  - {fileID: 21300000, guid: 34e7561f9ee86aa45b1acdea94dc9793, type: 3}
-  - {fileID: 21300000, guid: 3571c7c25f698614db9fdafbac7ef833, type: 3}
-  - {fileID: 21300000, guid: 0f61602f5d62dfd469057aa90e7e0476, type: 3}
-  - {fileID: 21300000, guid: 017fd70de17bc6b4cbe8fb4d328617b7, type: 3}
-  - {fileID: 21300000, guid: 9241457eeca95c64d8829237d138b40e, type: 3}
-  - {fileID: 21300000, guid: 85c9bbdae565bf54bb19907d110195e7, type: 3}
-  - {fileID: 21300000, guid: 142b9063258d5f54fb48ac28566d814b, type: 3}
-  - {fileID: 21300000, guid: 5d55f9309a79a5c4cb4510c1d6ec85ac, type: 3}
-  - {fileID: 21300000, guid: 2e517e03e65461a4592abcc145936aff, type: 3}
-  - {fileID: 21300000, guid: 82b19f7a61ea7604fb4f130431b21016, type: 3}
-  - {fileID: 21300000, guid: 744722177b245d242a499b2f5ce5c8bc, type: 3}
-  - {fileID: 21300000, guid: 5fbb7728fb850964695349a9bf9078e2, type: 3}
-  - {fileID: 21300000, guid: 2327e5c8e53130140b1bf216cc6813d5, type: 3}
-  - {fileID: 21300000, guid: a8f58c85cdf508f4c916125e17ca3dea, type: 3}
-  - {fileID: 21300000, guid: b512d7e9bd7ba654686a617d92e64100, type: 3}
-  - {fileID: 21300000, guid: de478ff35bdcd0e4cbac2c2d7d436075, type: 3}
-  - {fileID: 21300000, guid: 9b2e9991870f0fc42a8648d41f2b4530, type: 3}
-  - {fileID: 21300000, guid: 55d92b240d2a549428663e373f9dcc27, type: 3}
-  - {fileID: 21300000, guid: 729c6efdb365c364c9fd98d4d58e7f43, type: 3}
-  frameRate: 120
-  loop: 0
+  m_EditorClassIdentifier: CyanStars::CyanStars.Gameplay.MusicGame.SdfHitEffectPlayer
+  color: {r: 1, g: 0.094117604, b: 1, a: 1}
+  duration: 0.25
   playOnEnable: 1
   hideOnFinish: 1
-  spriteRenderer: {fileID: 1994146493810534228}
+  targetRenderer: {fileID: 3535124696405483951}
