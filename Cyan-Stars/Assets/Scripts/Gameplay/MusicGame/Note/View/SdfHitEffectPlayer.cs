@@ -45,7 +45,7 @@ namespace CyanStars.Gameplay.MusicGame
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int ProgressId = Shader.PropertyToID("_Progress");
 
-        private readonly MaterialPropertyBlock PropertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock propertyBlock = null!;
 
         /// <summary>
         /// 已播放的时间（s）
@@ -56,6 +56,11 @@ namespace CyanStars.Gameplay.MusicGame
         /// 是否正在播放
         /// </summary>
         private bool isPlaying;
+
+        private void Awake()
+        {
+            propertyBlock = new MaterialPropertyBlock();
+        }
 
         private void OnEnable()
         {
@@ -108,9 +113,9 @@ namespace CyanStars.Gameplay.MusicGame
         /// </summary>
         private void Apply(float progress)
         {
-            PropertyBlock.SetColor(ColorId, color);
-            PropertyBlock.SetFloat(ProgressId, progress);
-            targetRenderer.SetPropertyBlock(PropertyBlock);
+            propertyBlock.SetColor(ColorId, color);
+            propertyBlock.SetFloat(ProgressId, progress);
+            targetRenderer.SetPropertyBlock(propertyBlock);
         }
 
         /// <summary>
