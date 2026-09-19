@@ -1,0 +1,1 @@
+HitEffectShaderGraph 依赖于此 Sample，勿删。
