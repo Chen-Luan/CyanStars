@@ -12,8 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d0e7e12b4d34a3ea6aab87f1a10370c, type: 3}
   m_Name: InternalMapList
   m_EditorClassIdentifier: 
-  ChartPackFilePaths:
-  - "Assets/CysMultimediaAssets/Charts/0-\u5E7D\u7075\u5C11\u5973/ChartPack.json"
-  - "Assets/CysMultimediaAssets/Charts/1-\u6DF1\u7A7A\u65C1\u767D/ChartPack.json"
-  - "Assets/CysMultimediaAssets/Charts/2-\u4E91\u4E0E\u8BD7/ChartPack.json"
-  - "Assets/CysMultimediaAssets/Charts/3-\u76DB\u5178/ChartPack.json"
+  ChartPacks:
+  - ChartPackFilePath: "Assets/CysMultimediaAssets/Charts/0-\u5E7D\u7075\u5C11\u5973/ChartPack.json"
+    ChartHashes:
+    - ChartFilePath: "Charts/\u7AA5\u661F.json"
+      ChartHash: cys0_6847f4d4f6fcecdadbe055f0a8db705d36b3aa16ec20968c8b1d9889b82bbd5d
+  - ChartPackFilePath: "Assets/CysMultimediaAssets/Charts/1-\u6DF1\u7A7A\u65C1\u767D/ChartPack.json"
+    ChartHashes:
+    - ChartFilePath: "Charts/\u542F\u660E.json"
+      ChartHash: cys0_ebee6c6c70e7194fdf33d6fda3a737c49f08b6891161d1be0f0bd32a17edb335
+  - ChartPackFilePath: "Assets/CysMultimediaAssets/Charts/2-\u4E91\u4E0E\u8BD7/ChartPack.json"
+    ChartHashes:
+    - ChartFilePath: "Charts/\u5929\u67A2.json"
+      ChartHash: cys0_823a846092c7aeae18baf3f60e35e72cd19b9fe622d03ef7cb90e74af1f45251
+  - ChartPackFilePath: "Assets/CysMultimediaAssets/Charts/3-\u76DB\u5178/ChartPack.json"
+    ChartHashes:
+    - ChartFilePath: "Charts/\u65E0\u57A0.json"
+      ChartHash: cys0_faba9062768582da58d4ea32146756fe05b59e0ddfe037020210f5edaf24c3fe

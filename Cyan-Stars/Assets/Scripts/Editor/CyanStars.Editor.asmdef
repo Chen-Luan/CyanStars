@@ -2,6 +2,7 @@
     "name": "CyanStars.Editor",
     "rootNamespace": "CyanStars.Editor",
     "references": [
+        "GUID:e7191d6db89bcb44ea9e6cc23d08282d",
         "GUID:0a3f27cf3414da34bb39dba68c01b4ec",
         "GUID:c5ecc461727906345a35491a0440694f"
     ],
