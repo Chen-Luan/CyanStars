@@ -9,8 +9,12 @@ namespace CyanStars.Chart.Hashing
     /// 从磁盘读取谱包与谱面内容
     /// </summary>
     /// <remarks>
-    /// 只用于哈希计算这类需要读取原始文件内容的场合：玩家谱包目录必定是本地路径，
-    /// 因此读取一律走 <see cref="FileManager"/>，不经过资源系统
+    /// <para>只用于哈希计算这类需要批量读取原始文件内容的场合：启动比对与进入音游校验都要逐份读谱面，
+    /// 走资源系统会把整批谱面对象挂进资源缓存并计入引用计数，玩家谱面数量上去后启动内存与耗时都不可控；
+    /// 玩家谱包目录必定是本地路径，因此读取一律走 <see cref="FileManager"/>，不经过资源系统</para>
+    /// <para>解析与 CatAsset 的原生资源转换器共用同一套 json 参数（都经
+    /// <see cref="CyanStars.Framework.File.Serialization.JsonSerializer"/>），
+    /// 哈希输入因此与游戏实际加载到的谱面对象一致</para>
     /// </remarks>
     public sealed class ChartContentLoader : IChartContentLoader
     {

@@ -1,55 +1,51 @@
 ﻿#nullable enable
 
-using System;
-using System.Globalization;
-using CyanStars.Utils.JsonSerialization;
-using Newtonsoft.Json;
+using System.Text;
+using CyanStars.Framework.File.Serialization;
 using UnityEngine;
 
 namespace CyanStars.Framework.Asset
 {
     /// <summary>
-    /// .json 通用解析器，用于将以 byte[] 或 string 形式的 json 内容解析为任意兼容实例
+    /// .json 通用解析器：把 byte[] 或 string 形式的 json 数据解析为领域对象
     /// </summary>
+    /// <remarks>
+    /// 格式参数由 <see cref="JsonSerializer"/> 统一持有，本类只做入口适配：
+    /// CatAsset 的原生资源转换器与直接持有文本的调用方都经此处，
+    /// 保证同一份 json 无论从资源系统还是从磁盘取得，都解析成同一个领域对象
+    /// </remarks>
     public static class JsonLoadHelper
     {
-        // 反序列化格式参数
-        private static readonly JsonSerializerSettings Settings = new()
-        {
-            TypeNameHandling = TypeNameHandling.None,
-            Formatting = Formatting.Indented,
-            Culture = CultureInfo.InvariantCulture,
-            DateFormatHandling = DateFormatHandling.IsoDateFormat,
-            Converters = JsonConverters.Converters
-        };
-
+        /// <summary>
+        /// 从 json 字节解析数据
+        /// </summary>
+        /// <param name="bytes">UTF-8 编码的 json 字节</param>
+        /// <returns>解析结果；失败时为默认值</returns>
         public static T? LoadData<T>(byte[] bytes)
         {
-            if (bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0)
             {
-                Debug.LogError("用于反序列化的 byte[] 为空或 null。");
+                Debug.LogError($"用于反序列化的 byte[] 为空，目标类型 {typeof(T).Name}。");
                 return default;
             }
 
-            // 将 byte[] 转换为 UTF-8 字符串
-            string str = System.Text.Encoding.UTF8.GetString(bytes);
-            return LoadData<T>(str);
+            return LoadData<T>(Encoding.UTF8.GetString(bytes));
         }
 
-
+        /// <summary>
+        /// 从 json 文本解析数据
+        /// </summary>
+        /// <param name="str">json 文本</param>
+        /// <returns>解析结果；失败时为默认值</returns>
         public static T? LoadData<T>(string str)
         {
-            try
+            if (string.IsNullOrEmpty(str))
             {
-                T? obj = JsonConvert.DeserializeObject<T>(str, Settings);
-                Debug.Log($"从 byte[] 反序列化完成。");
-                return obj;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"从 byte[] 反序列化时出现异常：{e}");
+                Debug.LogError($"用于反序列化的 json 为空，目标类型 {typeof(T).Name}。");
                 return default;
             }
+
+            return JsonSerializer.TryDeserialize(str, out T? data) ? data : default;
         }
     }
 }

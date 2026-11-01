@@ -26,6 +26,11 @@ namespace CyanStars.Framework.File.Serialization
         };
 
         /// <summary>
+        /// UTF-8 BOM 字符
+        /// </summary>
+        private const char ByteOrderMark = '\uFEFF';
+
+        /// <summary>
         /// 序列化对象到 json 字符串
         /// </summary>
         /// <param name="obj">要序列化的对象</param>
@@ -52,7 +57,11 @@ namespace CyanStars.Framework.File.Serialization
         /// <param name="json">json 文本</param>
         /// <param name="data">反序列化结果；失败时为默认值</param>
         /// <returns>是否成功反序列化</returns>
-        /// <remarks>与 <see cref="TrySerialize"/> 共用一套格式参数；失败原因由调用方结合上下文记录，本方法只在异常时记录一条日志</remarks>
+        /// <remarks>
+        /// 开头的 UTF-8 BOM 在此剔除：资源系统按字节取出内容再解码，带 BOM 的文件会留下一个不可见字符，
+        /// 而文本读取会自动去掉它，不抹平会让同一份文件在两条通道下一个能解析一个不能；
+        /// 失败原因由调用方结合上下文记录，本方法只在异常时记录一条日志
+        /// </remarks>
         public static bool TryDeserialize<T>(string json, out T? data)
         {
             data = default;
@@ -62,6 +71,9 @@ namespace CyanStars.Framework.File.Serialization
 
             try
             {
+                if (json[0] == ByteOrderMark)
+                    json = json.Substring(1);
+
                 data = JsonConvert.DeserializeObject<T>(json, Settings);
                 return data != null;
             }
