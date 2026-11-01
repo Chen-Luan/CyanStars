@@ -92,7 +92,7 @@ namespace CyanStars.Gameplay.MusicGame
         public override void OnInit()
         {
             InputMapDataName = "Assets/BundleRes/ScriptObjects/InputMap/InputMapData.asset";
-            InternalMapListName = "Assets/BundleRes/ScriptObjects/InternalMap/InternalMapList.asset";
+            InternalMapListName = InternalChartPackListSO.AssetPath;
 
             NotePrefabNameDict = new Dictionary<NoteType, string>()
             {

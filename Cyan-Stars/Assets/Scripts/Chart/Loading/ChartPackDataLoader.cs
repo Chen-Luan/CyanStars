@@ -30,23 +30,21 @@ namespace CyanStars.Chart.Loading
         public const string ChartPackAssetsFolder = "Assets";
 
         /// <summary>
-        /// 内置谱包 SO 文件路径
-        /// </summary>
-        private const string InternalChartPackListFilePath =
-            "Assets/BundleRes/ScriptObjects/InternalMap/InternalMapList.asset";
-
-        /// <summary>
         /// 从磁盘重新加载全部谱包，包括内置和玩家谱包
         /// </summary>
         public static async Task<List<RuntimeChartPack>> ReloadAllAsync(string playerChartPacksFolderPath)
         {
             var paths = new List<string>();
 
-            using var internalListHandler = await GameRoot.Asset.LoadAssetAsync<InternalChartPackListSO>(InternalChartPackListFilePath);
+            using var internalListHandler = await GameRoot.Asset.LoadAssetAsync<InternalChartPackListSO>(
+                InternalChartPackListSO.AssetPath);
             InternalChartPackListSO internalChartPackListSO = internalListHandler.Asset;
-            foreach (var path in internalChartPackListSO.ChartPackFilePaths)
+            foreach (InternalChartPackListSO.InternalChartPackEntry packEntry in internalChartPackListSO.ChartPacks)
             {
-                paths.Add(path);
+                if (packEntry == null || string.IsNullOrEmpty(packEntry.ChartPackFilePath))
+                    continue;
+
+                paths.Add(packEntry.ChartPackFilePath);
             }
 
             int internalPacksCount = paths.Count;
