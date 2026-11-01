@@ -2,16 +2,20 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using JetBrains.Annotations;
-using Newtonsoft.Json;
-using UnityEngine;
+using CyanStars.Framework.File.Serialization;
 using CyanStars.Utils;
+using JetBrains.Annotations;
+using UnityEngine;
 
 namespace CyanStars.GameSave
 {
     /// <summary>
     /// 管理游戏存档的保存和加载操作
     /// </summary>
+    /// <remarks>
+    /// json 的格式参数与解析实现由 <see cref="JsonSerializer"/> 统一持有，本类不再自己指定序列化参数，
+    /// 也不设置全局默认参数（那会外溢到其他调用方）
+    /// </remarks>
     public static class GameSaveManager
     {
         /// <summary>
@@ -25,7 +29,12 @@ namespace CyanStars.GameSave
             {
                 gameSaveData.Verification = CalculateVerification(gameSaveData);
 
-                string json = JsonConvert.SerializeObject(gameSaveData, Formatting.Indented);
+                if (!JsonSerializer.TrySerialize(gameSaveData, out string json))
+                {
+                    Debug.LogError($"存档序列化失败，已放弃写入：{saveFilePath}");
+                    return;
+                }
+
                 File.WriteAllText(saveFilePath, json);
                 Debug.Log($"存档保存成功：{saveFilePath}");
             }
@@ -53,11 +62,14 @@ namespace CyanStars.GameSave
             try
             {
                 string json = File.ReadAllText(saveFilePath);
-                JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+                if (!JsonSerializer.TryDeserialize(json, out gameSaveData) || gameSaveData == null)
                 {
-                    TypeNameHandling = TypeNameHandling.None
-                };
-                gameSaveData = JsonConvert.DeserializeObject<GameSaveData>(json);
+                    Debug.LogError($"存档内容无法解析，已备份原文件：{saveFilePath}");
+                    BackupSaveFile(saveFilePath);
+                    gameSaveData = null;
+                    return GameSaveLoadResult.InvalidData;
+                }
+
                 Debug.Log("存档读取成功，进行校验。");
 
                 // 计算存档数据的校验值并验证
@@ -103,6 +115,8 @@ namespace CyanStars.GameSave
         /// </summary>
         /// <param name="gameSaveData">要计算校验值的存档数据</param>
         /// <returns>存档数据的校验值</returns>
+        /// <remarks>校验文本取单行序列化结果：只取决于数据本身，与存档文件的缩进写法无关</remarks>
+        /// <exception cref="InvalidOperationException">存档数据无法序列化</exception>
         private static string CalculateVerification(GameSaveData gameSaveData)
         {
             // 克隆存档数据，但不包含Verification属性
@@ -114,10 +128,10 @@ namespace CyanStars.GameSave
                 MusicGameData = gameSaveData.MusicGameData
             };
 
-            string json = JsonConvert.SerializeObject(clonedGameSaveData);
+            if (!JsonSerializer.TrySerializeCompact(clonedGameSaveData, out string json))
+                throw new InvalidOperationException("存档数据无法序列化，校验值计算失败。");
 
-            using SHA256 sha256 = SHA256.Create();
-
+            using (SHA256 sha256 = SHA256.Create())
             {
                 byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(json));
                 StringBuilder hashString = new StringBuilder();
