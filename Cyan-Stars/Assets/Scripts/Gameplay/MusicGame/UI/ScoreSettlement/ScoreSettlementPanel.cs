@@ -158,6 +158,10 @@ namespace CyanStars.Gameplay.MusicGame.UI.ScoreSettlement
         /// <summary>
         /// 获取数据并计算目标值
         /// </summary>
+        /// <remarks>
+        /// TODO: 本次成绩尚未写入存档，历史成绩与 New Best 判定也未接入；
+        /// 存档以谱面哈希为键，取键见 <c>ChartHashModule.TryGetChartHash</c>
+        /// </remarks>
         private void PreprocessData()
         {
             // 获取曲名、分数、杂率、最大连击数，各判定数
