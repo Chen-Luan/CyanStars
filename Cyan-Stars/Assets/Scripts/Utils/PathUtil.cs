@@ -26,6 +26,12 @@ namespace CyanStars.Utils
         public static readonly IEqualityComparer<string> PathComparer = PathSemanticComparer.Instance;
 
         /// <summary>
+        /// 当前平台文件系统的大小写比较规则
+        /// </summary>
+        /// <remarks>供路径前缀裁剪等需要 <see cref="StringComparison"/> 的场合使用，与 <see cref="PathComparer"/> 同源</remarks>
+        public static StringComparison SemanticComparison => PathSemanticComparer.Comparison;
+
+        /// <summary>
         /// 按路径语义比较两个路径，允许 null 互相比较
         /// </summary>
         public static bool PathEquals(string? path1, string? path2)
