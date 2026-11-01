@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using CyanStars.Chart.Hashing;
 using CyanStars.Chart.Loading;
 using CyanStars.Chart.Tracks;
 using CyanStars.Framework;
@@ -84,18 +85,30 @@ namespace CyanStars.Chart
         /// <summary>
         /// 清空已加载的谱包和谱面，并从磁盘重新加载全部谱包，包括内置和玩家谱包，不含谱面
         /// </summary>
+        /// <remarks>
+        /// 谱包加载完成后同步比对谱面哈希缓存并解析各谱面的哈希：成绩展示依赖确定的谱面身份，
+        /// 因此这一步是阻塞性的
+        /// TODO: 优化为后台任务，先展示选曲界面再补齐哈希，未就绪的谱面成绩区域留空
+        /// </remarks>
         public async Task ReloadAllChartPacksAsync()
         {
+            string playerChartPacksFolderPath = GameRoot.File.GetAppPath(AppPathKind.PlayerChartPacks);
+            ChartPackLoadOutcome outcome = await ChartPackDataLoader.ReloadAllAsync(playerChartPacksFolderPath);
+
             runtimeChartPacks.Clear();
-            runtimeChartPacks.AddRange(await ChartPackDataLoader.ReloadAllAsync(
-                GameRoot.File.GetAppPath(AppPathKind.PlayerChartPacks)));
+            runtimeChartPacks.AddRange(outcome.ChartPacks);
+
+            await GameRoot.GetDataModule<ChartHashModule>().ReconcileWithCacheAsync(outcome);
         }
 
         /// <summary>
         /// 加载一个新的谱包到列表
         /// </summary>
         /// <param name="chartPackFilePath">谱包索引文件的绝对路径</param>
-        /// <remarks>通过此方法增量加载的谱包视为玩家谱包</remarks>
+        /// <remarks>
+        /// 通过此方法增量加载的谱包视为玩家谱包
+        /// TODO: 增量加载不经过缓存比对，本次会话内该谱包没有可用哈希，需在加载后立即解析
+        /// </remarks>
         public async Task AddChartPackDataFromDisk(string chartPackFilePath)
         {
             runtimeChartPacks.Add(await ChartPackDataLoader.AddFromDiskAsync(chartPackFilePath));
@@ -150,6 +163,9 @@ namespace CyanStars.Chart
         /// 重载某个谱包的数据，见于在制谱器更新了内容时
         /// </summary>
         /// <param name="index">需要重载的谱包的下标</param>
+        /// <remarks>
+        /// TODO: 重载不经过缓存比对，该谱包的哈希要等进入音游或下次启动才解析，本次会话内取不到
+        /// </remarks>
         public async Task ReloadChartPackDataFromDisk(int index)
         {
             runtimeChartPacks[index] =

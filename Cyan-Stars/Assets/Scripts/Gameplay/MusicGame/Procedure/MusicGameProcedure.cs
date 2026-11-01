@@ -9,6 +9,7 @@ using CyanStars.Framework.Logging;
 using CyanStars.Framework.Timeline;
 using CyanStars.Gameplay.Base;
 using CyanStars.Chart;
+using CyanStars.Chart.Hashing;
 using CyanStars.Gameplay.MusicGame.UI.ScoreSettlement;
 using CyanStars.Graphics.Band;
 using CyanStars.Utils;
@@ -238,6 +239,12 @@ namespace CyanStars.Gameplay.MusicGame
             if (ChartModule.ChartData == null)
             {
                 Debug.LogError("谱面加载失败");
+            }
+            else
+            {
+                // 进入音游前重算谱面哈希，成绩要落在谱面当前内容对应的键上
+                GameRoot.GetDataModule<ChartHashModule>().VerifyAndRefreshChartHash(
+                    runtimeChartPack, (int)ChartModule.SelectedChartIndex!);
             }
 
 

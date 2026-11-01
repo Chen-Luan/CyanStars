@@ -32,7 +32,9 @@ namespace CyanStars.Chart.Loading
         /// <summary>
         /// 从磁盘重新加载全部谱包，包括内置和玩家谱包
         /// </summary>
-        public static async Task<List<RuntimeChartPack>> ReloadAllAsync(string playerChartPacksFolderPath)
+        /// <param name="playerChartPacksFolderPath">玩家谱包目录</param>
+        /// <returns>加载结果，含读取或解析失败的谱包索引文件路径</returns>
+        public static async Task<ChartPackLoadOutcome> ReloadAllAsync(string playerChartPacksFolderPath)
         {
             var paths = new List<string>();
 
@@ -65,6 +67,7 @@ namespace CyanStars.Chart.Loading
             using var batchAssetHandler = await GameRoot.Asset.BatchLoadAssetAsync(paths);
 
             var newPacks = new List<RuntimeChartPack>();
+            var unparsableChartPackFilePaths = new List<string>();
             for (int i = 0; i < paths.Count; i++)
             {
                 using AssetHandler<TextAsset> textHandler = GameRoot.Asset.LoadAssetAsync<TextAsset>(paths[i]);
@@ -75,6 +78,7 @@ namespace CyanStars.Chart.Loading
                 if (textHandler.Asset?.text == null)
                 {
                     Debug.LogError($"无法将 {paths[i]} 转换为 {nameof(ChartPackData)}，相关谱包无法加载！");
+                    unparsableChartPackFilePaths.Add(paths[i]);
                     continue;
                 }
 
@@ -83,6 +87,7 @@ namespace CyanStars.Chart.Loading
                 if (chartPackData == null)
                 {
                     Debug.LogError($"无法将 {paths[i]} 转换为 {nameof(ChartPackData)}，相关谱包无法加载！");
+                    unparsableChartPackFilePaths.Add(paths[i]);
                     continue;
                 }
 
@@ -90,6 +95,7 @@ namespace CyanStars.Chart.Loading
                 if (workspacePath == null)
                 {
                     Debug.LogError($"谱包路径为空：{chartPackData.Title}，相关谱包无法加载！");
+                    unparsableChartPackFilePaths.Add(paths[i]);
                     continue;
                 }
 
@@ -102,7 +108,7 @@ namespace CyanStars.Chart.Loading
                 newPacks.Add(new RuntimeChartPack(chartPackData, isInternal, workspacePath));
             }
 
-            return newPacks;
+            return new ChartPackLoadOutcome(newPacks, unparsableChartPackFilePaths);
         }
 
         /// <summary>
