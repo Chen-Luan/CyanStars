@@ -1,11 +1,14 @@
 #nullable enable
 
+using CyanStars.Gameplay.ChartEditor;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace CyanStars
 {
+    [RequireComponent(typeof(Canvas))]
+    [RequireComponent(typeof(PopupEffectController))]
     public class ChartPackSelectionPopup : MonoBehaviour
     {
         [SerializeField]
@@ -61,5 +64,33 @@ namespace CyanStars
 
         [SerializeField]
         private Button enterChartEditorButton = null!;
+
+        private Canvas canvas = null!;
+        private PopupEffectController popupEffectController = null!;
+
+
+        private void Awake()
+        {
+            canvas = GetComponent<Canvas>();
+            popupEffectController = GetComponent<PopupEffectController>();
+        }
+
+        private void OnEnable() => closePopupButton.onClick.AddListener(CloseCanvas);
+        private void OnDisable() => closePopupButton.onClick.RemoveListener(CloseCanvas);
+
+        public async void OpenCanvas()
+        {
+            if (canvas.enabled)
+                return;
+
+            canvas.enabled = true;
+            await popupEffectController.ShowPopupCanvas();
+        }
+
+        private async void CloseCanvas()
+        {
+            await popupEffectController.HidePopupCanvas();
+            canvas.enabled = false;
+        }
     }
 }

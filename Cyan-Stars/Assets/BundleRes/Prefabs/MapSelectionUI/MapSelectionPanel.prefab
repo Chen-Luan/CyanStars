@@ -2677,8 +2677,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 518, y: -174}
-  m_SizeDelta: {x: 1036, y: 0}
+  m_AnchoredPosition: {x: 1478, y: -174}
+  m_SizeDelta: {x: 2956, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &3966465432295803747
 MonoBehaviour:
@@ -5181,6 +5181,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: CyanStars::CyanStars.Gameplay.ChartEditor.ChartEditorPopupEffectController
   tweenDuration: 0.2
+  closedScale: 1.02
 --- !u!114 &2049901963499186249
 MonoBehaviour:
   m_ObjectHideFlags: 0
