@@ -328,7 +328,7 @@ namespace CyanStars.Framework.File
         /// <summary>
         /// 将外部文件夹复制到应用自有目录
         /// </summary>
-        /// <param name="sourceFolderPath">外部文件夹路径，可以是本地绝对路径或安卓 <c>content://</c> 路径</param>
+        /// <param name="sourceFolderPath">外部文件夹路径，安卓 <c>content://</c> 路径需要通过句柄中转</param>
         /// <param name="targetFolderPath">目标绝对路径；目标已存在时追加序号后缀</param>
         /// <param name="copiedFolderPath">实际复制到的路径；失败时为空字符串</param>
         /// <param name="error">平台不支持或路径校验失败时的原因；复制阶段失败时为空字符串，原因见日志</param>

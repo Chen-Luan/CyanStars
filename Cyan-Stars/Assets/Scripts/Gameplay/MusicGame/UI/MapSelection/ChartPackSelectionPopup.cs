@@ -1,6 +1,10 @@
 #nullable enable
 
+using CyanStars.Chart;
+using CyanStars.Framework;
+using CyanStars.Framework.File;
 using CyanStars.Gameplay.ChartEditor;
+using CyanStars.Gameplay.ChartEditor.Procedure;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -65,8 +69,13 @@ namespace CyanStars
         [SerializeField]
         private Button enterChartEditorButton = null!;
 
+        private const string CacheScope = "ChartPackSelection";
         private Canvas canvas = null!;
         private PopupEffectController popupEffectController = null!;
+
+        private FileManager FileManager => GameRoot.File;
+        private ChartModule? chartModuleInternal;
+        private ChartModule ChartModule => chartModuleInternal ??= GameRoot.GetDataModule<ChartModule>();
 
 
         private void Awake()
@@ -75,8 +84,17 @@ namespace CyanStars
             popupEffectController = GetComponent<PopupEffectController>();
         }
 
-        private void OnEnable() => closePopupButton.onClick.AddListener(CloseCanvas);
-        private void OnDisable() => closePopupButton.onClick.RemoveListener(CloseCanvas);
+        private void OnEnable()
+        {
+            closePopupButton.onClick.AddListener(CloseCanvas);
+            createChartPackButton.onClick.AddListener(CreateChartPack);
+        }
+
+        private void OnDisable()
+        {
+            closePopupButton.onClick.RemoveListener(CloseCanvas);
+            createChartPackButton.onClick.RemoveListener(CreateChartPack);
+        }
 
         public async void OpenCanvas()
         {
@@ -91,6 +109,14 @@ namespace CyanStars
         {
             await popupEffectController.HidePopupCanvas();
             canvas.enabled = false;
+        }
+
+
+        private void CreateChartPack()
+        {
+            // 按约定，未加载谱包谱面时进入制谱器，视为新建谱包。详见 ChartEditorSceneRoot
+            ChartModule.CancelSelectChartPackData();
+            GameRoot.ChangeProcedure<ChartEditorProcedure>();
         }
     }
 }
