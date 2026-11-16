@@ -21,6 +21,10 @@ namespace CyanStars.Gameplay.ChartEditor
         [SerializeField]
         private float tweenDuration = 0.2f;
 
+        [SerializeField]
+        private float closedScale = 1.02f;
+
+
         private CanvasGroup canvasGroup = null!;
         private RectTransform rectTransform = null!;
         private Tween? activeSequence;
@@ -30,7 +34,7 @@ namespace CyanStars.Gameplay.ChartEditor
             canvasGroup = GetComponent<CanvasGroup>();
             rectTransform = (transform as RectTransform)!;
             canvasGroup.alpha = 0;
-            rectTransform.localScale = new Vector3(0.9f, 0.9f, 0.9f);
+            rectTransform.localScale = new Vector3(closedScale, closedScale, closedScale);
         }
 
 
@@ -78,7 +82,7 @@ namespace CyanStars.Gameplay.ChartEditor
 
             activeSequence = DOTween.Sequence()
                 .Append(canvasGroup.DOFade(0f, tweenDuration))
-                .Join(rectTransform.DOScale(0.8f, tweenDuration))
+                .Join(rectTransform.DOScale(closedScale, tweenDuration))
                 .SetEase(Ease.OutQuad)
                 .SetUpdate(true)
                 .SetLink(gameObject);
