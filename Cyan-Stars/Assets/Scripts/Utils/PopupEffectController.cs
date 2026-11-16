@@ -9,14 +9,14 @@ using UnityEngine;
 namespace CyanStars.Gameplay.ChartEditor
 {
     /// <summary>
-    /// 用于控制制谱器弹窗整体的打开/关闭动画效果
+    /// 用于控制弹窗整体的打开/关闭动画效果
     /// </summary>
     /// <remarks>
-    /// 挂在到弹窗预制体下，然后由同物体上的 View 脚本调用效果
+    /// 挂在到弹窗预制体下，然后由其他脚本在开关时调用方法
     /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CanvasGroup))]
-    public class ChartEditorPopupEffectController : MonoBehaviour
+    public class PopupEffectController : MonoBehaviour
     {
         [SerializeField]
         private float tweenDuration = 0.2f;

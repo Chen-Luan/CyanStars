@@ -25,7 +25,7 @@ namespace CyanStars.Gameplay.ChartEditor.View
         private Canvas canvas = null!;
         private CommandStack commandStack = null!;
 
-        private ChartEditorPopupEffectController? effectController;
+        private PopupEffectController? effectController;
         private CancellationTokenSource? cts;
         private readonly ReactiveProperty<bool> CanvasVisibility = new(false);
 
@@ -33,7 +33,7 @@ namespace CyanStars.Gameplay.ChartEditor.View
         protected virtual void Awake()
         {
             canvas = GetComponent<Canvas>();
-            TryGetComponent<ChartEditorPopupEffectController>(out effectController);
+            TryGetComponent<PopupEffectController>(out effectController);
         }
 
         protected virtual void OnDestroy()
