@@ -38,6 +38,10 @@ namespace CyanStars.Chart.Loading
         /// <summary>
         /// 从磁盘重新加载全部谱包，包括内置和玩家谱包
         /// </summary>
+        /// <remarks>
+        /// <para>内置谱包以 SO 中的顺序为准，必定排在社区谱包之前；</para>
+        /// <para>社区谱包按 <see cref="ChartPackOrderStore"/> 记录的顺序排列，详见 <see cref="ApplyCommunityChartPackOrder"/>。</para>
+        /// </remarks>
         public static async Task<List<RuntimeChartPack>> ReloadAllAsync(string playerChartPacksFolderPath)
         {
             var paths = new List<string>();
@@ -51,17 +55,7 @@ namespace CyanStars.Chart.Loading
 
             int internalPacksCount = paths.Count;
 
-            if (!Directory.Exists(playerChartPacksFolderPath))
-            {
-                Directory.CreateDirectory(playerChartPacksFolderPath);
-            }
-
-            var playerChartPaths =
-                Directory.EnumerateFiles(playerChartPacksFolderPath, ChartPackFileName, SearchOption.AllDirectories);
-            foreach (var path in playerChartPaths)
-            {
-                paths.Add(PathUtil.Normalize(path));
-            }
+            paths.AddRange(ApplyCommunityChartPackOrder(playerChartPacksFolderPath));
 
             // 批量加载以提高效率，后续单个加载时能直接快速完成
             using var batchAssetHandler = await GameRoot.Asset.BatchLoadAssetAsync(paths);
@@ -105,6 +99,44 @@ namespace CyanStars.Chart.Loading
             }
 
             return newPacks;
+        }
+
+        /// <summary>
+        /// 扫描并排序社区谱包的索引文件路径
+        /// </summary>
+        /// <param name="playerChartPacksFolderPath">社区谱包根目录的绝对路径</param>
+        /// <returns>按游戏内顺序排列的谱包索引文件绝对路径</returns>
+        /// <remarks>
+        /// <para>按约定，社区谱包平铺在根目录下的一级文件夹内；</para>
+        /// <para>已在顺序文件中的按记录排列，丢失的从记录中删去，未记录的新谱包排到最后，记录变化时写回文件。</para>
+        /// </remarks>
+        private static List<string> ApplyCommunityChartPackOrder(string playerChartPacksFolderPath)
+        {
+            if (!Directory.Exists(playerChartPacksFolderPath))
+            {
+                Directory.CreateDirectory(playerChartPacksFolderPath);
+            }
+
+            var scannedPackFolderNames = new List<string>();
+            foreach (string packFolderPath in Directory.EnumerateDirectories(playerChartPacksFolderPath))
+            {
+                string packFilePath = PathUtil.Combine(packFolderPath, ChartPackFileName);
+                if (File.Exists(packFilePath))
+                {
+                    scannedPackFolderNames.Add(PathUtil.GetName(packFolderPath));
+                }
+            }
+
+            List<string> orderedPackFolderNames =
+                ChartPackOrderStore.ApplyPersistedOrder(playerChartPacksFolderPath, scannedPackFolderNames);
+
+            var orderedPaths = new List<string>(orderedPackFolderNames.Count);
+            foreach (string packFolderName in orderedPackFolderNames)
+            {
+                orderedPaths.Add(PathUtil.Combine(playerChartPacksFolderPath, packFolderName, ChartPackFileName));
+            }
+
+            return orderedPaths;
         }
 
         /// <summary>
@@ -166,10 +198,10 @@ namespace CyanStars.Chart.Loading
         private static bool VerifyInternalChartPackMetaData(ChartPackData chartPackData)
         {
             return chartPackData.ChartMetaDatas.Count == 4 &&
-                   chartPackData.ChartMetaDatas[0].Difficulty == ChartDifficulty.KuiXing &&
-                   chartPackData.ChartMetaDatas[1].Difficulty == ChartDifficulty.QiMing &&
-                   chartPackData.ChartMetaDatas[2].Difficulty == ChartDifficulty.TianShu &&
-                   chartPackData.ChartMetaDatas[3].Difficulty == ChartDifficulty.WuYin;
+                chartPackData.ChartMetaDatas[0].Difficulty == ChartDifficulty.KuiXing &&
+                chartPackData.ChartMetaDatas[1].Difficulty == ChartDifficulty.QiMing &&
+                chartPackData.ChartMetaDatas[2].Difficulty == ChartDifficulty.TianShu &&
+                chartPackData.ChartMetaDatas[3].Difficulty == ChartDifficulty.WuYin;
         }
     }
 }

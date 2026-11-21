@@ -84,11 +84,34 @@ namespace CyanStars.Chart
         /// <summary>
         /// 清空已加载的谱包和谱面，并从磁盘重新加载全部谱包，包括内置和玩家谱包，不含谱面
         /// </summary>
+        /// <remarks>内置谱包以 SO 顺序为准排在最前，社区谱包按顺序文件记录的顺序排列</remarks>
         public async Task ReloadAllChartPacksAsync()
         {
             runtimeChartPacks.Clear();
             runtimeChartPacks.AddRange(await ChartPackDataLoader.ReloadAllAsync(
                 GameRoot.File.GetAppPath(AppPathKind.PlayerChartPacks)));
+        }
+
+        /// <summary>
+        /// 按当前谱包列表顺序，把社区谱包的顺序写回顺序文件，见于选曲页调整顺序后的持久化
+        /// </summary>
+        /// <param name="error">失败原因；保存成功时为空字符串</param>
+        /// <returns>是否保存成功</returns>
+        /// <remarks>内置谱包以 SO 顺序为准，不写入记录，也不受本方法影响</remarks>
+        public bool TrySaveChartPackOrder(out string error)
+        {
+            string chartPacksFolderPath = GameRoot.File.GetAppPath(AppPathKind.PlayerChartPacks);
+
+            var orderedPackFolderNames = new List<string>();
+            foreach (RuntimeChartPack runtimeChartPack in runtimeChartPacks)
+            {
+                if (runtimeChartPack.IsInternal)
+                    continue;
+
+                orderedPackFolderNames.Add(PathUtil.GetName(runtimeChartPack.WorkspacePath));
+            }
+
+            return ChartPackOrderStore.TrySaveOrder(chartPacksFolderPath, orderedPackFolderNames, out error);
         }
 
         /// <summary>
