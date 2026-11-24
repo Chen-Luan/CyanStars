@@ -36,12 +36,8 @@ namespace CyanStars.Chart.Loading
             "Assets/BundleRes/ScriptObjects/InternalMap/InternalMapList.asset";
 
         /// <summary>
-        /// 从磁盘重新加载全部谱包，包括内置和玩家谱包
+        /// 从磁盘重新加载全部谱包（内置谱包按 SO 顺序排在最前，社区谱包按持久化顺序排列）
         /// </summary>
-        /// <remarks>
-        /// <para>内置谱包以 SO 中的顺序为准，必定排在社区谱包之前；</para>
-        /// <para>社区谱包按 <see cref="ChartPackOrderStore"/> 记录的顺序排列，详见 <see cref="ApplyCommunityChartPackOrder"/>。</para>
-        /// </remarks>
         public static async Task<List<RuntimeChartPack>> ReloadAllAsync(string playerChartPacksFolderPath)
         {
             var paths = new List<string>();
@@ -54,8 +50,7 @@ namespace CyanStars.Chart.Loading
             }
 
             int internalPacksCount = paths.Count;
-
-            paths.AddRange(ApplyCommunityChartPackOrder(playerChartPacksFolderPath));
+            paths.AddRange(ScanAndOrderCommunityPackPaths(playerChartPacksFolderPath));
 
             // 批量加载以提高效率，后续单个加载时能直接快速完成
             using var batchAssetHandler = await GameRoot.Asset.BatchLoadAssetAsync(paths);
@@ -102,106 +97,89 @@ namespace CyanStars.Chart.Loading
         }
 
         /// <summary>
-        /// 扫描并排序社区谱包的索引文件路径
+        /// 从磁盘增量加载单个社区谱包
         /// </summary>
-        /// <param name="playerChartPacksFolderPath">社区谱包根目录的绝对路径</param>
-        /// <returns>按游戏内顺序排列的谱包索引文件绝对路径</returns>
-        /// <remarks>
-        /// <para>按约定，社区谱包平铺在根目录下的一级文件夹内；</para>
-        /// <para>已在顺序文件中的按记录排列，丢失的从记录中删去，未记录的新谱包排到最后，记录变化时写回文件。</para>
-        /// </remarks>
-        private static List<string> ApplyCommunityChartPackOrder(string playerChartPacksFolderPath)
+        public static Task<RuntimeChartPack> AddFromDiskAsync(string chartPackFilePath)
         {
-            if (!Directory.Exists(playerChartPacksFolderPath))
-            {
-                Directory.CreateDirectory(playerChartPacksFolderPath);
-            }
-
-            var scannedPackFolderNames = new List<string>();
-            foreach (string packFolderPath in Directory.EnumerateDirectories(playerChartPacksFolderPath))
-            {
-                string packFilePath = PathUtil.Combine(packFolderPath, ChartPackFileName);
-                if (File.Exists(packFilePath))
-                {
-                    scannedPackFolderNames.Add(PathUtil.GetName(packFolderPath));
-                }
-            }
-
-            List<string> orderedPackFolderNames =
-                ChartPackOrderStore.ApplyPersistedOrder(playerChartPacksFolderPath, scannedPackFolderNames);
-
-            var orderedPaths = new List<string>(orderedPackFolderNames.Count);
-            foreach (string packFolderName in orderedPackFolderNames)
-            {
-                orderedPaths.Add(PathUtil.Combine(playerChartPacksFolderPath, packFolderName, ChartPackFileName));
-            }
-
-            return orderedPaths;
+            return LoadSinglePlayerPackAsync(chartPackFilePath, "加载");
         }
 
         /// <summary>
-        /// 从磁盘加载一张谱包（视为玩家谱包）
+        /// 从磁盘重载单个社区谱包
         /// </summary>
-        public static async Task<RuntimeChartPack> AddFromDiskAsync(string chartPackFilePath)
+        public static Task<RuntimeChartPack> ReloadFromDiskAsync(string workspacePath)
+        {
+            string chartPackFilePath = PathUtil.Combine(workspacePath, ChartPackFileName);
+            return LoadSinglePlayerPackAsync(chartPackFilePath, "更新");
+        }
+
+        private static async Task<RuntimeChartPack> LoadSinglePlayerPackAsync(string chartPackFilePath, string actionName)
         {
             using var handler = await GameRoot.Asset.LoadAssetAsync<ChartPackData>(chartPackFilePath);
             ChartPackData? chartPackData = handler.Asset;
 
             if (chartPackData == null)
-                throw new NullReferenceException("尝试加载的谱包为 null，加载失败！");
+                throw new NullReferenceException($"尝试{actionName}的谱包为 null，操作失败：{chartPackFilePath}");
 
-            Debug.Log($"已增量加载谱包 {chartPackFilePath}");
-            return new RuntimeChartPack(
-                chartPackData,
-                false,
-                GetWorkspacePath(chartPackFilePath)
-            );
-        }
-
-        /// <summary>
-        /// 从磁盘重载某个玩家谱包的数据
-        /// </summary>
-        public static async Task<RuntimeChartPack> ReloadFromDiskAsync(string workspacePath)
-        {
-            string chartPackFilePath = PathUtil.Combine(workspacePath, ChartPackFileName);
-
-            using var reloadHandler = await GameRoot.Asset.LoadAssetAsync<ChartPackData>(chartPackFilePath);
-            ChartPackData? chartPackData = reloadHandler.Asset;
-            if (chartPackData == null)
-                throw new NullReferenceException("尝试加载的谱包为 null，增量更新失败！");
-
-            Debug.Log($"已增量更新谱包 {chartPackFilePath}");
-            return new RuntimeChartPack(
-                chartPackData,
-                false,
-                GetWorkspacePath(chartPackFilePath)
-            );
-        }
-
-        /// <summary>
-        /// 取谱包索引文件所在的工作区目录
-        /// </summary>
-        /// <exception cref="ArgumentException">路径里取不到目录（如传入了文件名）</exception>
-        private static string GetWorkspacePath(string chartPackFilePath)
-        {
-            string? workspacePath = Path.GetDirectoryName(PathUtil.Normalize(chartPackFilePath));
-            if (string.IsNullOrEmpty(workspacePath))
+            if (!TryGetWorkspacePath(chartPackFilePath, out string workspacePath))
                 throw new ArgumentException($"无法获取谱包的工作区目录：{chartPackFilePath}", nameof(chartPackFilePath));
 
-            return workspacePath;
+            Debug.Log($"已增量{actionName}谱包 {chartPackFilePath}");
+            return new RuntimeChartPack(chartPackData, false, workspacePath);
         }
 
         /// <summary>
-        /// 校验内置谱包下谱面是否合规
+        /// 扫描社区谱包根目录的一级子文件夹，并按持久化顺序返回对应的索引文件路径
         /// </summary>
-        /// <remarks>各个难度都有且仅有一张谱面，难度与下标一致，不存在 null 难度谱面</remarks>
+        private static List<string> ScanAndOrderCommunityPackPaths(string playerChartPacksFolderPath)
+        {
+            if (!Directory.Exists(playerChartPacksFolderPath))
+                Directory.CreateDirectory(playerChartPacksFolderPath);
+
+            var scannedFolderNames = new List<string>();
+            foreach (string packFolderPath in Directory.EnumerateDirectories(playerChartPacksFolderPath))
+            {
+                string packFilePath = PathUtil.Combine(packFolderPath, ChartPackFileName);
+                if (File.Exists(packFilePath))
+                    scannedFolderNames.Add(PathUtil.GetName(packFolderPath));
+            }
+
+            List<string> orderedFolderNames =
+                ChartPackOrderStore.ApplyPersistedOrder(playerChartPacksFolderPath, scannedFolderNames);
+
+            var orderedPaths = new List<string>(orderedFolderNames.Count);
+            foreach (string folderName in orderedFolderNames)
+            {
+                orderedPaths.Add(PathUtil.Combine(playerChartPacksFolderPath, folderName, ChartPackFileName));
+            }
+
+            return orderedPaths;
+        }
+
+        private static bool TryGetWorkspacePath(string chartPackFilePath, out string workspacePath)
+        {
+            string? dir = Path.GetDirectoryName(PathUtil.Normalize(chartPackFilePath));
+            if (string.IsNullOrEmpty(dir))
+            {
+                workspacePath = string.Empty;
+                return false;
+            }
+
+            workspacePath = PathUtil.Normalize(dir);
+            return true;
+        }
+
+        /// <summary>
+        /// 校验内置谱包是否严格包含 4 个难度且与下标顺序一致
+        /// </summary>
         private static bool VerifyInternalChartPackMetaData(ChartPackData chartPackData)
         {
-            return chartPackData.ChartMetaDatas.Count == 4 &&
-                chartPackData.ChartMetaDatas[0].Difficulty == ChartDifficulty.KuiXing &&
-                chartPackData.ChartMetaDatas[1].Difficulty == ChartDifficulty.QiMing &&
-                chartPackData.ChartMetaDatas[2].Difficulty == ChartDifficulty.TianShu &&
-                chartPackData.ChartMetaDatas[3].Difficulty == ChartDifficulty.WuYin;
+            var metas = chartPackData.ChartMetaDatas;
+            return metas is { Count: 4 } &&
+                metas[0]?.Difficulty == ChartDifficulty.KuiXing &&
+                metas[1]?.Difficulty == ChartDifficulty.QiMing &&
+                metas[2]?.Difficulty == ChartDifficulty.TianShu &&
+                metas[3]?.Difficulty == ChartDifficulty.WuYin;
         }
     }
 }

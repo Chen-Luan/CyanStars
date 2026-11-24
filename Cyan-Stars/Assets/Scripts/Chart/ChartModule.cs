@@ -93,11 +93,11 @@ namespace CyanStars.Chart
         }
 
         /// <summary>
-        /// 按当前谱包列表顺序，把社区谱包的顺序写回顺序文件，见于选曲页调整顺序后的持久化
+        /// 按当前谱包列表顺序，把社区谱包的顺序写入缓存文件，见于选曲页调整顺序后的持久化
         /// </summary>
         /// <param name="error">失败原因；保存成功时为空字符串</param>
         /// <returns>是否保存成功</returns>
-        /// <remarks>内置谱包以 SO 顺序为准，不写入记录，也不受本方法影响</remarks>
+        /// <remarks>内置谱包以 SO 顺序为准，不写入记录，直接添加到所有社区谱包之前</remarks>
         public bool TrySaveChartPackOrder(out string error)
         {
             string chartPacksFolderPath = GameRoot.File.GetAppPath(AppPathKind.PlayerChartPacks);

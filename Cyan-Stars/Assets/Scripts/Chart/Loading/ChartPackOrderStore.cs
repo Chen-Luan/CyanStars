@@ -9,7 +9,6 @@ using CyanStars.Framework;
 using CyanStars.Utils;
 using Newtonsoft.Json;
 using UnityEngine;
-using IOFile = System.IO.File;
 
 namespace CyanStars.Chart.Loading
 {
@@ -17,11 +16,9 @@ namespace CyanStars.Chart.Loading
     /// 社区谱包顺序的持久化存储
     /// </summary>
     /// <remarks>
-    /// <para>顺序文件固定在应用数据目录的 <c>Data</c> 文件夹下。
-    /// 内容是字典：键为社区谱包根目录的绝对路径，值为列表，按游戏内顺序排序的谱包文件夹名。
-    /// （相对根目录的一级路径，加载时拼接两者）。</para>
-    /// <para>内置谱包不在此记录，每次加载以 SO 顺序为准，必定排在社区谱包之前。</para>
-    /// <para>谱面顺序不在此记录，由元数据文件中的顺序定义。</para>
+    /// 顺序文件保存在持久化数据目录的 <c>Data/PlayerChartPackOrder.json</c>，
+    /// 结构为「社区谱包根目录绝对路径 -> 有序的一级文件夹名列表」。
+    /// 仅管理社区谱包顺序；内置谱包以 SO 为准，单谱包内的谱面顺序由谱包元数据自身决定。
     /// </remarks>
     public static class ChartPackOrderStore
     {
@@ -30,82 +27,72 @@ namespace CyanStars.Chart.Loading
 
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false);
 
-
-        /// <summary>
-        /// 社区谱包顺序文件的路径
-        /// </summary>
         private static string OrderFilePath =>
             PathUtil.Combine(GameRoot.File.Environment.PersistentDataRoot, DataFolderName, OrderFileName);
 
-
         /// <summary>
-        /// 把本次扫描到的社区谱包文件夹名按持久化记录排序
+        /// 将本次扫描到的社区谱包文件夹名按持久化记录排序并同步失效/新增项
         /// </summary>
-        /// <param name="rootFolderPath">社区谱包根目录的绝对路径</param>
-        /// <param name="scannedPackFolderNames">本次从磁盘扫描到的谱包文件夹名，不要求有序</param>
-        /// <returns>按游戏内顺序排列、且已去重的谱包文件夹名列表</returns>
         /// <remarks>
-        /// <para>已记录但没扫描到的谱包视为丢失，从记录中删去；未记录的新谱包按文件夹名排序追加到最后。</para>
-        /// <para>记录有变化时才写回文件。</para>
+        /// 已记录但磁盘上已不存在的谱包会被移除；新扫描到的谱包按文件夹名排序追加到末尾。
+        /// 仅当顺序或成员发生变化时写回文件。
         /// </remarks>
         public static List<string> ApplyPersistedOrder(
             string rootFolderPath,
             IReadOnlyList<string> scannedPackFolderNames
         )
         {
-            // 扫描结果按平台路径大小写敏感性规则去重，保留磁盘上的实际文件夹名
-            var scannedNames = new List<string>();
-            var knownNames = new HashSet<string>(PathUtil.PathComparer);
+            // 按平台路径大小写规则去重，同时保留磁盘上的实际文件夹名
+            var diskNameMap = new Dictionary<string, string>(PathUtil.PathComparer);
             foreach (string name in scannedPackFolderNames)
             {
-                if (!string.IsNullOrEmpty(name) && knownNames.Add(name))
-                    scannedNames.Add(name);
+                if (!string.IsNullOrEmpty(name) && !diskNameMap.ContainsKey(name))
+                    diskNameMap[name] = name;
             }
 
             Dictionary<string, List<string>> orderData = LoadOrderData();
             string? rootKey = FindRootKey(orderData, rootFolderPath);
             List<string>? savedOrder = rootKey == null ? null : orderData[rootKey];
 
-            var orderedNames = new List<string>();
+            var orderedNames = new List<string>(diskNameMap.Count);
             var usedNames = new HashSet<string>(PathUtil.PathComparer);
 
-            // 已记录的谱包按记录顺序排前，其中丢失或重复的项在此被剔除
+            // 1. 优先保留已记录且仍存在于磁盘的谱包顺序（同时剔除重复/已删除项）
             if (savedOrder != null)
             {
                 foreach (string savedName in savedOrder)
                 {
-                    if (knownNames.Contains(savedName) && usedNames.Add(savedName))
-                        orderedNames.Add(savedName);
+                    if (!string.IsNullOrEmpty(savedName) &&
+                        diskNameMap.TryGetValue(savedName, out string? actualName) &&
+                        usedNames.Add(actualName))
+                    {
+                        orderedNames.Add(actualName);
+                    }
                 }
             }
 
-            // 不在记录中的新谱包按文件夹名排序，追加到最后
-            scannedNames.Sort(StringComparer.OrdinalIgnoreCase);
-            foreach (string scannedName in scannedNames)
+            // 2. 未记录的新谱包按文件夹名排序追加到最后
+            var newNames = new List<string>();
+            foreach (string actualName in diskNameMap.Values)
             {
-                if (usedNames.Add(scannedName))
-                    orderedNames.Add(scannedName);
+                if (usedNames.Add(actualName))
+                    newNames.Add(actualName);
             }
+            newNames.Sort(StringComparer.OrdinalIgnoreCase);
+            orderedNames.AddRange(newNames);
 
-            // 记录缺失、有谱包丢失或新增时写回文件
             bool changed = savedOrder == null || !orderedNames.SequenceEqual(savedOrder, PathUtil.PathComparer);
-            if (changed)
+            if (changed && !SaveOrderForRoot(orderData, rootKey, rootFolderPath, orderedNames, out string error))
             {
-                orderData[rootKey ?? PathUtil.Normalize(rootFolderPath)] = orderedNames;
-                if (!TrySaveOrderData(orderData, out string error))
-                    Debug.LogWarning(error);
+                Debug.LogWarning(error);
             }
 
             return orderedNames;
         }
 
         /// <summary>
-        /// 按给定顺序覆盖某个根目录的记录并写回文件，见于游戏内调整谱包顺序后的持久化
+        /// 按给定顺序覆盖指定根目录的持久化记录（用于游戏内手动调整谱包顺序）
         /// </summary>
-        /// <param name="rootFolderPath">社区谱包根目录的绝对路径</param>
-        /// <param name="orderedPackFolderNames">按游戏内顺序排列的谱包文件夹名列表</param>
-        /// <param name="error">失败原因；保存成功时为空字符串</param>
-        /// <remarks>内置谱包以 SO 顺序为准，不出现在此列表中</remarks>
         public static bool TrySaveOrder(
             string rootFolderPath,
             IReadOnlyList<string> orderedPackFolderNames,
@@ -115,7 +102,7 @@ namespace CyanStars.Chart.Loading
             Dictionary<string, List<string>> orderData = LoadOrderData();
             string? rootKey = FindRootKey(orderData, rootFolderPath);
 
-            var orderedNames = new List<string>();
+            var orderedNames = new List<string>(orderedPackFolderNames.Count);
             var usedNames = new HashSet<string>(PathUtil.PathComparer);
             foreach (string name in orderedPackFolderNames)
             {
@@ -123,30 +110,34 @@ namespace CyanStars.Chart.Loading
                     orderedNames.Add(name);
             }
 
-            orderData[rootKey ?? PathUtil.Normalize(rootFolderPath)] = orderedNames;
+            return SaveOrderForRoot(orderData, rootKey, rootFolderPath, orderedNames, out error);
+        }
+
+        private static bool SaveOrderForRoot(
+            Dictionary<string, List<string>> orderData,
+            string? existingRootKey,
+            string rootFolderPath,
+            List<string> orderedNames,
+            out string error
+        )
+        {
+            orderData[existingRootKey ?? PathUtil.Normalize(rootFolderPath)] = orderedNames;
             return TrySaveOrderData(orderData, out error);
         }
 
-
-        /// <summary>
-        /// 读取顺序文件；文件缺失、内容为空或解析失败时返回空字典（视为无记录）
-        /// </summary>
         private static Dictionary<string, List<string>> LoadOrderData()
         {
             string orderFilePath = OrderFilePath;
-
-            if (!IOFile.Exists(orderFilePath))
+            if (!File.Exists(orderFilePath))
                 return new Dictionary<string, List<string>>();
 
             try
             {
-                string json = IOFile.ReadAllText(orderFilePath, Encoding.UTF8);
-                Dictionary<string, List<string>>? orderData =
-                    JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
-
+                string json = File.ReadAllText(orderFilePath, Encoding.UTF8);
+                var orderData = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
                 if (orderData == null)
                 {
-                    Debug.LogWarning($"社区谱包顺序文件内容为空，本次已视为无记录：{orderFilePath}");
+                    Debug.LogWarning($"社区谱包顺序文件内容为空，已视为无记录：{orderFilePath}");
                     return new Dictionary<string, List<string>>();
                 }
 
@@ -154,27 +145,21 @@ namespace CyanStars.Chart.Loading
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"读取社区谱包顺序文件失败，本次已视为无记录：{orderFilePath}\n{e.Message}");
+                Debug.LogWarning($"读取社区谱包顺序文件失败，已视为无记录：{orderFilePath}\n{e.Message}");
                 return new Dictionary<string, List<string>>();
             }
         }
 
-        /// <summary>
-        /// 保存顺序文件
-        /// </summary>
         private static bool TrySaveOrderData(Dictionary<string, List<string>> orderData, out string error)
         {
-            error = "";
-
+            error = string.Empty;
             string orderFilePath = OrderFilePath;
 
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(orderFilePath)!);
-
                 string json = JsonConvert.SerializeObject(orderData, Formatting.Indented);
-                IOFile.WriteAllText(orderFilePath, json, Utf8NoBom);
-
+                File.WriteAllText(orderFilePath, json, Utf8NoBom);
                 return true;
             }
             catch (Exception e)
@@ -186,7 +171,7 @@ namespace CyanStars.Chart.Loading
         }
 
         /// <summary>
-        /// 查找与给定根目录指向同一文件夹的既有键，保留记录中的原始写法
+        /// 查找与目标根目录指向同一位置的既有键，以保留原始路径写法
         /// </summary>
         private static string? FindRootKey(Dictionary<string, List<string>> orderData, string rootFolderPath)
         {
